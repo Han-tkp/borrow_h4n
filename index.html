@@ -120,7 +120,7 @@
                         <button id="btnLogout" class="px-4 py-2 rounded-lg bg-red-500/20 text-red-100 hover:bg-red-500/40 transition text-sm">ออกจากระบบ</button>
                     </div>
                 </nav>
-                <button id="hamburgerBtn" class="md:hidden p-2 rounded-lg bg-white/10 hover:bg-white/20 hidden text-2xl">
+                <button id="hamburgerBtn" class="md:hidden p-2 rounded-lg bg-white/10 hover:bg-white/20 text-2xl">
                     <span>☰</span>
                 </button>
             </div>
@@ -250,7 +250,7 @@
                         <div class="lg:col-span-2 card rounded-2xl p-6 text-slate-900">
                             <div class="flex flex-wrap items-center justify-between gap-3">
                                 <h3 class="text-lg font-semibold">รายการอุปกรณ์</h3>
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-2 flex-wrap">
                                     <input id="dashEquipSearch" placeholder="ค้นหา" class="px-3 py-2 w-32 rounded-lg border border-slate-200">
                                     <select id="dashEquipFilter" class="px-3 py-2 rounded-lg border border-slate-200">
                                         <option value="all">ว่าง & ถูกยืม</option>
@@ -259,6 +259,9 @@
                                         <option value="under_maintenance">ซ่อมบำรุง</option>
                                         <option value="pending_repair_approval">รออนุมัติซ่อม</option>
                                         <option value="deleted">ถูกลบ (Admin)</option>
+                                    </select>
+                                    <select id="dashEquipTypeFilter" class="px-3 py-2 rounded-lg border border-slate-200">
+                                        <option value="">ทุกประเภท</option>
                                     </select>
                                     <button id="btnAddEquipDash" class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 hidden">เพิ่ม</button>
                                 </div>
@@ -270,7 +273,9 @@
                                     <button id="bulkDeleteBtn" class="px-3 py-1 text-xs rounded-lg bg-red-500 text-white hover:bg-red-600">ลบรายการที่เลือก</button>
                                 </div>
                             </div>
-                            <div id="dashEquipList" class="mt-4 grid sm:grid-cols-2 gap-4 grid-mobile-1"></div>
+                            <div class="overflow-y-auto max-h-[60vh] pr-2 -mr-2 mt-4">
+                               <div id="dashEquipList" class="grid sm:grid-cols-2 gap-4 grid-mobile-1"></div>
+                            </div>
                         </div>
                         <div class="card rounded-2xl p-6 text-slate-900 space-y-4">
                             <div>
@@ -324,11 +329,7 @@
                 </div>
 
                 <div id="techTab" class="hidden tab-content">
-                    <div class="grid lg:grid-cols-3 gap-6 grid-mobile-1">
-                        <div class="card rounded-2xl p-6 text-slate-900">
-                            <h3 class="text-lg font-semibold">รายการรอส่งมอบ</h3>
-                            <div id="techDeliveryQueue" class="mt-4 space-y-3"></div>
-                        </div>
+                    <div class="grid lg:grid-cols-2 gap-6 grid-mobile-1">
                         <div class="card rounded-2xl p-6 text-slate-900">
                             <h3 class="text-lg font-semibold">รายการรอตรวจสภาพ (หลังคืน)</h3>
                             <div id="techReturnQueue" class="mt-4 space-y-3"></div>
@@ -342,6 +343,27 @@
                         </div>
                     </div>
                 </div>
+                
+                <div id="deliveryTab" class="hidden tab-content">
+                    <div class="card rounded-2xl p-6 text-slate-900">
+                        <h3 class="text-lg font-semibold">รายการรอส่งมอบ (Delivery Queue)</h3>
+                        <p class="text-sm text-slate-600 mt-1">รายการคำขอยืมที่ได้รับการอนุมัติแล้วและรอการตรวจสภาพเพื่อส่งมอบ</p>
+                        <div class="mt-4 overflow-x-auto">
+                            <table class="w-full text-sm text-left text-slate-500">
+                                <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3">ID การยืม</th>
+                                        <th scope="col" class="px-4 py-3">ผู้ยืม</th>
+                                        <th scope="col" class="px-4 py-3">รายการอุปกรณ์</th>
+                                        <th scope="col" class="px-4 py-3">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="deliveryQueueTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                  <div id="repairHistoryTab" class="hidden tab-content">
                     <div class="card rounded-2xl p-6 text-slate-900">
                          <h3 class="text-lg font-semibold">ประวัติการซ่อมทั้งหมด</h3>
@@ -438,6 +460,26 @@
                                 <canvas id="repairCostChart"></canvas>
                             </div>
                         </div>
+                         <div class="mt-8 border-t pt-6">
+                            <h4 class="text-lg font-semibold mb-4">การวิเคราะห์เชิงลึก</h4>
+                            <div class="grid md:grid-cols-2 gap-6 grid-mobile-1">
+                                <div>
+                                    <h5 class="font-semibold mb-2 text-slate-800">อุปกรณ์ที่ซ่อมบ่อยที่สุด 5 อันดับ</h5>
+                                    <div id="mostRepairedList" class="text-sm"></div>
+                                </div>
+                                <div class="chart-container" style="height: 300px;">
+                                    <canvas id="borrowByTypeChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="technicianReportSection" class="hidden mt-8 border-t pt-6">
+                            <h4 class="text-lg font-semibold mb-4">มุมมองสำหรับช่างเทคนิค</h4>
+                            <div id="techReportCards" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 grid-mobile-1"></div>
+                            <div class="mt-6">
+                                <h5 class="font-semibold mb-2 text-slate-800">อะไหล่ที่ใช้บ่อยที่สุด 5 รายการ</h5>
+                                <div id="frequentPartsList" class="text-sm"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -479,12 +521,12 @@
                                </table>
                            </div>
                         </div>
-                         <div id="adminSubContentGroups" class="hidden">
-                            <div class="flex items-center justify-between mb-4">
-                                <h4 class="text-lg font-semibold">กลุ่มผู้ใช้งาน</h4>
-                                <button id="adminAddGroupBtn" class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm">สร้างกลุ่มใหม่</button>
-                            </div>
-                            <div id="adminGroupList" class="space-y-3"></div>
+                        <div id="adminSubContentGroups" class="hidden">
+                           <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                               <p class="font-semibold">กลุ่มและสิทธิ์การเข้าถึง</p>
+                               <button id="adminAddGroupBtn" class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm">สร้างกลุ่มใหม่</button>
+                           </div>
+                           <div id="adminGroupList" class="space-y-3"></div>
                         </div>
                         <div id="adminSubContentLog" class="hidden">
                              <div class="mb-4">
@@ -594,13 +636,13 @@
                     { id: 17, serial: '0334 0461 01160 0107', name: 'HUDSON X-PERT SPRAYER', type: 'เครื่องพ่นเคมีอัดลม', department: 'นคม.2', acquisition_date: '2018-01-11', status: 'available', notes: '', price: 2500 },
                     { id: 18, serial: '0334 0461 01160 0108', name: 'HUDSON X-PERT SPRAYER', type: 'เครื่องพ่นเคมีอัดลม', department: 'ศดม.', acquisition_date: '2018-01-11', status: 'available', notes: '', price: 2500 },
                     { id: 19, serial: 'สคร.0334 0429 0863 0124', name: 'IK VECTOR CONTROL SUPER', type: 'เครื่องพ่นเคมีอัดลม', department: 'นคม.2', acquisition_date: '2020-10-19', status: 'borrowed', notes: '', price: 3200 },
-                    { id: 20, serial: 'สคร.0334 0429 0863 0125', name: 'IK VECTOR CONTROL SUPER', type: 'เครื่องพ่นเคมีอัดลม', department: 'ศตม.', acquisition_date: '2020-10-19', status: 'available', notes: '', price: 3200 },
-                    { id: 21, serial: 'สคร.0334 0429 0863 0126', name: 'IK VECTOR CONTROL SUPER', type: 'เครื่องพ่นเคมีอัดลม', department: 'นคม.2', acquisition_date: '2020-10-19', status: 'available', notes: '', price: 3200 },
+                    { id: 20, serial: 'สคร.0334 0429 0863 0125', name: 'IK VECTOR CONTROL SUPER', type: 'เครื่องพ่นเคมีอัดลม', department: 'ศตม.', acquisition_date: '2020-10-19', status: 'borrowed', notes: '', price: 3200 },
+                    { id: 21, serial: 'สคร.0334 0429 0863 0126', name: 'IK VECTOR CONTROL SUPER', type: 'เครื่องพ่นเคมีอัดลม', department: 'นคม.2', acquisition_date: '2020-10-19', status: 'borrowed', notes: '', price: 3200 },
                     { id: 22, serial: 'สคร.0334 0429 0863 0127', name: 'IK VECTOR CONTROL SUPER', type: 'เครื่องพ่นเคมีอัดลม', department: 'นคม.3', acquisition_date: '2020-10-19', status: 'available', notes: '', price: 3200 },
                     { id: 23, serial: 'สคร.0334 0429 0465 0140', name: 'IK VECTOR CONTROL SUPER', type: 'เครื่องพ่นเคมีอัดลม', department: 'นคม.3', acquisition_date: '2022-09-28', status: 'available', notes: '', price: 3200 },
-                    { id: 24, serial: 'สคร.0334 0429 0465 0141', name: 'IK VECTOR CONTROL SUPER', type: 'เครื่องพ่นเคมีอัดลม', department: 'นคม.2', acquisition_date: '2022-09-28', status: 'available', notes: '', price: 3200 },
-                    { id: 25, serial: 'สคร.0334 0429 0465 0142', name: 'IK VECTOR CONTROL SUPER', type: 'เครื่องพ่นเคมีอัดลม', department: 'นคม.3', acquisition_date: '2022-09-28', status: 'available', notes: '', price: 3200 },
-                    { id: 26, serial: '51 6640 007 00005 (67)', name: 'Micron CS10', type: 'เครื่องพ่นฝอยละออง', department: 'ศตม.', acquisition_date: '2024-05-14', status: 'available', notes: '', price: 15000 },
+                    { id: 24, serial: 'สคร.0334 0429 0465 0141', name: 'IK VECTOR CONTROL SUPER', type: 'เครื่องพ่นเคมีอัดลม', department: 'นคม.2', acquisition_date: '2022-09-28', status: 'pending_repair_approval', notes: 'ชำรุดจากการใช้งาน', price: 3200 },
+                    { id: 25, serial: 'สคร.0334 0429 0465 0142', name: 'IK VECTOR CONTROL SUPER', type: 'เครื่องพ่นเคมีอัดลม', department: 'นคม.3', acquisition_date: '2022-09-28', status: 'borrowed', notes: '', price: 3200 },
+                    { id: 26, serial: '51 6640 007 00005 (67)', name: 'Micron CS10', type: 'เครื่องพ่นฝอยละออง', department: 'ศตม.', acquisition_date: '2024-05-14', status: 'borrowed', notes: '', price: 15000 },
                     { id: 27, serial: '0332 048 0001 (8551)', name: 'SWING FOG SN 11 P', type: 'เครื่องพ่นหมอกควัน', department: 'ศตม.', acquisition_date: '1997-06-13', status: 'available', notes: '', price: 45000 },
                     { id: 28, serial: '0332 048 0001 (8666)', name: 'SWING FOG SN 50', type: 'เครื่องพ่นหมอกควัน', department: 'ศตม.', acquisition_date: '1997-06-13', status: 'available', notes: '', price: 45000 },
                     { id: 29, serial: '0332 012.4 0010 (NR070542604)', name: 'IGEBA PORT 123 ULV', type: 'เครื่องพ่นฝอยละออง ULV', department: 'ศดม.', acquisition_date: '2006-02-18', status: 'available', notes: '', price: 68000 },
@@ -615,28 +657,56 @@
                     { id: 38, serial: 'สคร.0332 0418 0126', name: 'FONTAN PORTASTARS', type: 'เครื่องพ่นฝอยละออง', department: 'ศตม.', acquisition_date: '2016-11-29', status: 'available', notes: '', price: 35000 },
                     { id: 39, serial: '0334 0461 1260', name: 'Misuko 3WF-3A', type: 'เครื่องพ่นเคมีอัดลม', department: 'ศดม.', acquisition_date: '2018-01-12', status: 'available', notes: '', price: 4000 },
                     { id: 40, serial: '0332 0461 11600124', name: 'Swingtac ULV', type: 'เครื่องพ่นฝอยละออง ULV', department: 'ศตม.', acquisition_date: '2018-01-12', status: 'available', notes: '', price: 75000 },
+                    { id: 41, serial: 'XYZ-001', name: 'FONTAN PORTASTARS', type: 'เครื่องพ่นฝอยละออง', department: 'ศดม.', acquisition_date: '2023-01-15', status: 'available', notes: '', price: 35000 },
+                    { id: 42, serial: 'XYZ-002', name: 'SWING FOG SN50', type: 'เครื่องพ่นหมอกควัน', department: 'ศตม.', acquisition_date: '2023-02-20', status: 'under_maintenance', notes: 'หัวพ่นตัน', price: 45000 },
+                    { id: 43, serial: 'XYZ-003', name: 'HUDSON X-PERT SPRAYER', type: 'เครื่องพ่นเคมีอัดลม', department: 'นคม.2', acquisition_date: '2023-03-10', status: 'available', notes: '', price: 2500 },
+                    { id: 44, serial: 'XYZ-004', name: 'Micron CS10', type: 'เครื่องพ่นฝอยละออง', department: 'ศตม.', acquisition_date: '2023-04-05', status: 'available', notes: '', price: 15000 },
+                    { id: 45, serial: 'XYZ-005', name: 'IK VECTOR CONTROL SUPER', type: 'เครื่องพ่นเคมีอัดลม', department: 'นคม.3', acquisition_date: '2023-05-15', status: 'available', notes: '', price: 3200 }
                 ],
                 borrows: [
-                    { id: 1, equipment_ids: [19], user_id: 4, user_name: 'ผู้ใช้ทั่วไป', borrow_date: '2025-09-10', due_date: '2025-09-17', return_date: null, purpose: 'พ่นป้องกันไข้เลือดออก หมู่บ้านจัดสรร', contact_name: 'คุณสมศรี', contact_phone: '081-234-5678', notes: 'ขอเข้าพื้นที่ช่วงบ่าย', status: 'borrowed' }
+                    { id: 1, equipment_ids: [19], user_id: 4, user_name: 'ผู้ใช้ทั่วไป', borrow_date: '2025-09-10', due_date: '2025-09-17', return_date: null, purpose: 'พ่นป้องกันไข้เลือดออก หมู่บ้านจัดสรร', contact_name: 'คุณสมศรี', contact_phone: '081-234-5678', notes: 'ขอเข้าพื้นที่ช่วงบ่าย', status: 'borrowed' },
+                    { id: 2, equipment_ids: [20, 21], user_id: 6, user_name: 'สมหญิง รักดี', borrow_date: '2025-09-08', due_date: '2025-09-15', return_date: null, purpose: 'พ่นยุงในชุมชนแออัด', contact_name: 'คุณมานี', contact_phone: '082-345-6789', notes: '', status: 'pending_delivery' },
+                    { id: 3, equipment_ids: [22], user_id: 4, user_name: 'ผู้ใช้ทั่วไป', borrow_date: '2025-08-01', due_date: '2025-08-08', return_date: '2025-08-10', actual_return_date: '2025-08-10', late_return_reason: 'ติดภารกิจด่วน ไม่สามารถนำเครื่องมาคืนได้ทัน', status: 'returned_late', notes: '', contact_name: 'คุณสมศรี', contact_phone: '081-234-5678', purpose: 'พ่นยุงโรงเรียน' },
+                    { id: 4, equipment_ids: [24], user_id: 6, user_name: 'สมหญิง รักดี', borrow_date: '2025-08-15', due_date: '2025-08-22', return_date: '2025-08-22', actual_return_date: '2025-08-22', purpose: 'ควบคุมโรคระบาดในพื้นที่', contact_name: 'คุณมานี', contact_phone: '082-345-6789', status: 'returned_damaged' },
+                    { id: 5, equipment_ids: [25, 26], user_id: 4, user_name: 'ผู้ใช้ทั่วไป', borrow_date: '2025-09-12', due_date: '2025-09-19', return_date: null, purpose: 'ขอยืมใช้ฉุกเฉิน', contact_name: 'คุณสมศรี', contact_phone: '081-234-5678', notes: '', status: 'pending_borrow_approval' }
                 ],
                 repairs: [
                     { id: 1, equipment_id: 30, equipment_name: 'IGEBA PORT 123 ULV', damage_description: 'ระบบพ่นทำงานผิดปกติ', status: 'repair_approved', technician_id: 3, repair_details: null, cost: null, parts_used: null, request_date: '2025-08-15', attachments: [] },
                     { id: 2, equipment_id: 33, equipment_name: 'TWISTER XL BY DYNAFOG', damage_description: 'สตาร์ทไม่ติด', status: 'pending_repair_approval', technician_id: null, repair_details: null, cost: null, parts_used: null, request_date: '2025-08-18', attachments: [] },
+                    { id: 3, equipment_id: 24, equipment_name: 'IK VECTOR CONTROL SUPER', damage_description: 'ชำรุดจากการใช้งาน (ชุดยืม #4)', status: 'pending_repair_approval', technician_id: null, repair_details: null, cost: null, parts_used: null, request_date: '2025-08-22', attachments: [] },
+                    { id: 4, equipment_id: 10, equipment_name: 'HUDSON X-PERT SPRAYER', damage_description: 'แรงดันตก', status: 'completed', technician_id: 3, repair_details: 'เปลี่ยนหัวฉีดและซีลยาง O-ring ที่เสื่อมสภาพ', cost: 850, parts_used: 'หัวฉีด, ซีลยาง O-ring', request_date: '2025-07-05', repair_date: '2025-07-08', attachments: [] },
+                    { id: 5, equipment_id: 11, equipment_name: 'HUDSON X-PERT SPRAYER', damage_description: 'เครื่องเดินไม่เรียบ', status: 'completed', technician_id: 7, repair_details: 'ล้างทำความสะอาดคาร์บูเรเตอร์', cost: 300, parts_used: 'น้ำยาล้างคาร์บูเรเตอร์', request_date: '2025-07-10', repair_date: '2025-07-11', attachments: [] },
+                    { id: 6, equipment_id: 42, equipment_name: 'SWING FOG SN50', damage_description: 'หัวพ่นตัน', status: 'repair_approved', technician_id: 3, repair_details: null, cost: null, parts_used: null, request_date: '2025-09-01', attachments: [] }
                 ],
                 users: [
                     { id: 1, full_name: 'ผู้ดูแลระบบ', email: 'admin@example.com', role: 'admin', status: 'active', agency: 'ส่วนกลาง', address: '-', phone: '0' },
                     { id: 2, full_name: 'ผู้อนุมัติ', email: 'approver@example.com', role: 'approver', status: 'active', agency: 'สำนักงานใหญ่', address: '-', phone: '0' },
                     { id: 3, full_name: 'ช่างเทคนิค', email: 'tech@example.com', role: 'technician', status: 'active', agency: 'แผนกซ่อมบำรุง', address: '-', phone: '0' },
                     { id: 4, full_name: 'ผู้ใช้ทั่วไป', email: 'user@example.com', role: 'user', status: 'active', agency: 'อบต. ตัวอย่าง', address: '123 ถ.สุขุมวิท', phone: '080-000-0000' },
+                    { id: 6, full_name: 'สมหญิง รักดี', email: 'user2@example.com', role: 'user', status: 'active', agency: 'รพ.สต. แดนสุข', address: '789 ถ.ราษฎร์บำรุง', phone: '081-111-2222' },
+                    { id: 7, full_name: 'ช่างวิทย์', email: 'tech2@example.com', role: 'technician', status: 'active', agency: 'แผนกซ่อมบำรุง', address: '-', phone: '0' }
                 ],
                 pendingUsers: [
-                    { id: 5, full_name: 'สมชาย ใจดี', email: 'somchai@example.com', role: 'user', status: 'pending_approval', agency: 'เทศบาลนคร', address: '456 ถ.เพชรเกษม', phone: '090-000-0000' }
+                    { id: 5, full_name: 'สมชาย ใจดี', email: 'somchai@example.com', role: 'user', status: 'pending_approval', agency: 'เทศบาลนคร', address: '456 ถ.เพชรเกษม', phone: '090-000-0000' },
+                    { id: 8, full_name: 'มานะ อดทน', email: 'newuser@example.com', role: 'user', status: 'pending_approval', agency: 'อบจ. ใกล้กรุง', address: '101 ถ.มิตรภาพ', phone: '092-333-4444' }
                 ],
-                groups: [],
-                assessments: [],
-                notifications: [],
-                activityLog: [],
-                seq: { borrow: 2, repair: 3, user: 6, equip: 41, assessment: 1, notification: 1, log: 1, group: 1 }
+                groups: [
+                    { id: 1, name: 'ทีม A', member_ids: [3, 4], permissions: ['CAN_VIEW_REPORTS'] },
+                    { id: 2, name: 'ทีม B', member_ids: [], permissions: [] }
+                ],
+                assessments: [
+                    { id: 1, equipment_id: 1, date: '2025-06-15', exterior_condition: 'mid', engine_start: 'easy', clean_pipe: true, clean_chem_line: true, clean_gas_tank: true, chem_name: 'Deltamethrin', chem_concentration: '2.5%', chem_mix_ratio: '1:25', result_temp: '55', result_flow_rate: '550', notes: 'สภาพโดยรวมดี' },
+                    { id: 2, equipment_id: 28, date: '2025-06-20', exterior_condition: 'old', engine_start: 'hard', clean_pipe: true, chem_name: 'Cypermethrin', chem_concentration: '10%', chem_mix_ratio: '1:100', result_temp: '60', result_flow_rate: '600', notes: 'ควรตรวจเช็คหัวเทียน' }
+                ],
+                notifications: [
+                    { id: 1, message: 'มีผู้ใช้ใหม่ลงทะเบียน: สมชาย ใจดี', target: ['admin', 'approver'], timestamp: new Date('2025-09-11T10:00:00Z'), read: false },
+                    { id: 2, message: 'คำขอยืม #5 จาก ผู้ใช้ทั่วไป กำลังรอการอนุมัติ', target: ['admin', 'approver'], timestamp: new Date('2025-09-12T11:30:00Z'), read: false },
+                    { id: 3, message: 'เครื่อง TWISTER XL BY DYNAFOG รอการอนุมัติซ่อม', target: ['admin', 'approver'], timestamp: new Date('2025-09-12T09:00:00Z'), read: true }
+                ],
+                activityLog: [
+                    { id: 1, admin_id: 2, admin_name: 'ผู้อนุมัติ', action: 'APPROVE_USER', target_type: 'user', target_id: 6, timestamp: '2025-09-01T09:05:00Z', details: 'อนุมัติผู้ใช้: สมหญิง รักดี' }
+                ],
+                seq: { borrow: 6, repair: 7, user: 9, equip: 46, assessment: 3, notification: 4, log: 2, group: 3 }
             };
             let audioCtx;
             
@@ -904,40 +974,66 @@
                     addNotification(`${r.equipment_name} ซ่อมเสร็จแล้ว`, ['admin', 'approver']);
                     return true;
                 },
-                listGroups: async () => state.groups.sort((a,b) => a.id - b.id),
-                createGroup: async(data) => {
-                    const newGroup = {id: state.seq.group++, ...data};
-                    state.groups.push(newGroup);
-                    logActivity('CREATE_GROUP', 'group', newGroup.id, `สร้างกลุ่มใหม่: ${newGroup.name}`);
-                    return true;
-                },
-                updateGroup: async(id, data) => {
-                    const group = state.groups.find(g => g.id === id);
-                    if (!group) throw new Error('ไม่พบกลุ่ม');
-                    Object.assign(group, data);
-                    logActivity('UPDATE_GROUP', 'group', id, `แก้ไขกลุ่ม: ${group.name}`);
-                    return true;
-                },
-                deleteGroup: async(id) => {
-                    const group = state.groups.find(g => g.id === id);
-                    state.groups = state.groups.filter(g => g.id !== id);
-                    logActivity('DELETE_GROUP', 'group', id, `ลบกลุ่ม: ${group.name}`);
-                    return true;
-                },
                 listAssessments: async () => state.assessments.sort((a, b) => new Date(b.date) - new Date(a.date)),
                 createAssessment: async (data) => {
                     state.assessments.push({ id: state.seq.assessment++, ...data, date: new Date().toISOString().slice(0, 10) });
                     return true;
                 },
                 getReportData: async (filterMonth) => {
-                    const filteredBorrows = filterMonth ? state.borrows.filter(b => b.borrow_date.startsWith(filterMonth)) : state.borrows;
-                    const filteredRepairs = filterMonth ? state.repairs.filter(r => (r.request_date || '').startsWith(filterMonth)) : state.repairs;
+                    const allBorrows = state.borrows;
+                    const allRepairs = state.repairs;
+                    const filteredBorrows = filterMonth ? allBorrows.filter(b => b.borrow_date.startsWith(filterMonth)) : allBorrows;
+                    const filteredRepairs = filterMonth ? allRepairs.filter(r => (r.request_date || '').startsWith(filterMonth)) : allRepairs;
+                    
                     const completedRepairs = filteredRepairs.filter(r => r.status === 'completed' && r.cost);
                     const totalCost = completedRepairs.reduce((sum, r) => sum + Number(r.cost), 0);
+
+                    const repairCounts = allRepairs.reduce((acc, r) => {
+                        acc[r.equipment_id] = (acc[r.equipment_id] || 0) + 1;
+                        return acc;
+                    }, {});
+                    const mostRepaired = Object.entries(repairCounts).sort(([,a],[,b]) => b-a).slice(0, 5).map(([id, count]) => {
+                        const equip = state.equipment.find(e => e.id === parseInt(id));
+                        return { name: equip?.name || 'N/A', serial: equip?.serial || 'N/A', count };
+                    });
+                    
+                    const borrowingByType = allBorrows.flatMap(b => b.equipment_ids).reduce((acc, id) => {
+                        const equip = state.equipment.find(e => e.id === id);
+                        if (equip) {
+                            acc[equip.type] = (acc[equip.type] || 0) + 1;
+                        }
+                        return acc;
+                    }, {});
+
+                    const completedRepairsWithDates = allRepairs.filter(r => r.status === 'completed' && r.request_date && r.repair_date);
+                    let avgRepairTime = 0;
+                    if (completedRepairsWithDates.length > 0) {
+                        const totalTime = completedRepairsWithDates.reduce((sum, r) => {
+                            const start = new Date(r.request_date);
+                            const end = new Date(r.repair_date);
+                            const diffTime = Math.abs(end - start);
+                            return sum + Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        }, 0);
+                        avgRepairTime = totalTime / completedRepairsWithDates.length;
+                    }
+                    
+                    const pendingRepairs = allRepairs.filter(r => ['repair_approved', 'under_maintenance', 'pending_repair_approval'].includes(r.status)).length;
+
+                    const frequentParts = allRepairs.filter(r => r.parts_used).flatMap(r => r.parts_used.split(/[,;\n]/).map(p => p.trim().toLowerCase())).reduce((acc, part) => {
+                        if (part) acc[part] = (acc[part] || 0) + 1;
+                        return acc;
+                    }, {});
+                    const top5Parts = Object.entries(frequentParts).sort(([,a],[,b]) => b-a).slice(0, 5);
+
                     return {
                         totalBorrows: filteredBorrows.length,
                         totalRepairs: filteredRepairs.length,
-                        totalRepairCost: totalCost
+                        totalRepairCost: totalCost,
+                        mostRepairedEquipment: mostRepaired,
+                        borrowingByType: borrowingByType,
+                        averageRepairTime: avgRepairTime,
+                        pendingRepairsCount: pendingRepairs,
+                        frequentlyUsedParts: top5Parts
                     };
                 }
             };
@@ -1074,7 +1170,8 @@
                 if (state.user && $('#dashEquipList')) {
                     const q2 = $('#dashEquipSearch')?.value || '';
                     const f2 = $('#dashEquipFilter')?.value || '';
-                    const list2 = await api.equipmentList(q2, f2);
+                    const t2 = $('#dashEquipTypeFilter')?.value || '';
+                    const list2 = await api.equipmentList(q2, f2, t2);
                     $('#dashEquipList').innerHTML = list2.map(e => {
                         const { text, color } = statusMap[e.status] || { text: 'N/A', color: 'bg-gray-100' };
                         const isAdmin = state.user.role === 'admin';
@@ -1241,12 +1338,7 @@
                 }).join('');
             }
             async function renderTechnicianQueues() {
-                if (!state.user || !['admin', 'technician'].includes(state.user.role) || !$('#techDeliveryQueue')) return;
-                const deliveryQueue = await api.queueForDelivery();
-                $('#techDeliveryQueue').innerHTML = deliveryQueue.length === 0 ? `<p class="text-slate-500">ไม่มีรายการรอส่งมอบ</p>` : deliveryQueue.map(b => {
-                    const equipDetails = b.equipment_ids.map(id => state.equipment.find(e => e.id === id)).map(e => `<li>${e.name} (${e.type})</li>`).join('');
-                    return `<div class="p-3 rounded-lg border border-slate-200 text-sm"><div class="flex justify-between"><p>ส่งมอบให้ <span class="font-semibold">${b.user_name}</span></p>${state.user.role === 'admin' ? `<button onclick="handleAdminCancelBorrow(${b.id})" class="text-xs text-red-500 hover:underline">ยกเลิก</button>` : ''}</div><ul class="text-slate-600 list-disc list-inside">${equipDetails}</ul><button onclick="handlePreDeliveryCheck(${b.id})" class="mt-2 w-full px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 text-xs">ตรวจสภาพก่อนส่งมอบ</button></div>`
-                }).join('');
+                if (!state.user || !['admin', 'technician'].includes(state.user.role) || !$('#techReturnQueue')) return;
                 
                 const returnQueue = await api.queueForReturn();
                 $('#techReturnQueue').innerHTML = returnQueue.length === 0 ? `<p class="text-slate-500">ไม่มีรายการรอตรวจสภาพ</p>` : returnQueue.map(b => { 
@@ -1286,18 +1378,45 @@
                     </div>
                 </div>`;
             }
+            async function renderDeliveryTab() {
+                if (!state.user || !['admin', 'technician'].includes(state.user.role) || !$('#deliveryQueueTableBody')) return;
+                
+                const deliveryQueue = await api.queueForDelivery();
+                const tableBody = $('#deliveryQueueTableBody');
+                
+                if (deliveryQueue.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-slate-500">ไม่มีรายการรอส่งมอบ</td></tr>`;
+                    return;
+                }
+                
+                tableBody.innerHTML = deliveryQueue.map(b => {
+                    const equipDetails = b.equipment_ids.map(id => state.equipment.find(e => e.id === id))
+                                                        .map(e => e ? `<li>${e.name} (S/N: ${e.serial})</li>` : '<li>ไม่พบข้อมูล</li>').join('');
+                    return `<tr class="bg-white border-b hover:bg-slate-50">
+                        <td class="px-4 py-2 font-medium text-slate-900">#${b.id}</td>
+                        <td class="px-4 py-2">${b.user_name}</td>
+                        <td class="px-4 py-2"><ul class="list-disc list-inside text-xs">${equipDetails}</ul></td>
+                        <td class="px-4 py-2">
+                            <div class="flex flex-col gap-1.5">
+                                <button onclick="handleConfirmDelivery(${b.id})" class="px-3 py-1.5 text-xs rounded-lg bg-blue-500 text-white hover:bg-blue-600">ยืนยันส่งมอบ</button>
+                                <button onclick="handlePreDeliveryCheck(${b.id})" class="px-3 py-1.5 text-xs rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300">ตรวจสภาพ/เปลี่ยน</button>
+                            </div>
+                        </td>
+                    </tr>`;
+                }).join('');
+            }
             let borrowChartInstance = null;
             let repairCostChartInstance = null;
+            let borrowByTypeChartInstance = null;
             async function renderReports() {
-                if (!state.user || !['admin', 'approver'].includes(state.user.role) || !$('#reportCards')) return;
+                if (!state.user || !['admin', 'approver', 'technician'].includes(state.user.role) || !$('#reportCards')) return;
                 
                 const filterMonth = $('#reportMonthFilter').value;
-                
                 const reportData = await api.getReportData(filterMonth);
                 const equipSummary = await api.equipmentList();
-                const totalEquip = equipSummary.length;
+                const totalEquip = equipSummary.filter(e => e.status !== 'deleted').length;
 
-                $('#reportCards').innerHTML = `<div class="rounded-xl p-4 bg-blue-100 text-blue-800"><div class="text-sm">อุปกรณ์ทั้งหมด</div><div class="text-3xl font-bold mt-1">${totalEquip}</div></div><div class="rounded-xl p-4 bg-indigo-100 text-indigo-800"><div class="text-sm">การยืม (เดือนนี้)</div><div class="text-3xl font-bold mt-1">${reportData.totalBorrows}</div></div><div class="rounded-xl p-4 bg-amber-100 text-amber-800"><div class="text-sm">การซ่อม (เดือนนี้)</div><div class="text-3xl font-bold mt-1">${reportData.totalRepairs}</div></div><div class="rounded-xl p-4 bg-red-100 text-red-800"><div class="text-sm">ค่าซ่อม (เดือนนี้)</div><div class="text-3xl font-bold mt-1">${reportData.totalRepairCost.toLocaleString()}.-</div></div>`;
+                $('#reportCards').innerHTML = `<div class="rounded-xl p-4 bg-blue-100 text-blue-800"><div class="text-sm">อุปกรณ์ทั้งหมด</div><div class="text-3xl font-bold mt-1">${totalEquip}</div></div><div class="rounded-xl p-4 bg-indigo-100 text-indigo-800"><div class="text-sm">การยืม (เดือนที่เลือก)</div><div class="text-3xl font-bold mt-1">${reportData.totalBorrows}</div></div><div class="rounded-xl p-4 bg-amber-100 text-amber-800"><div class="text-sm">การซ่อม (เดือนที่เลือก)</div><div class="text-3xl font-bold mt-1">${reportData.totalRepairs}</div></div><div class="rounded-xl p-4 bg-red-100 text-red-800"><div class="text-sm">ค่าซ่อม (เดือนที่เลือก)</div><div class="text-3xl font-bold mt-1">${reportData.totalRepairCost.toLocaleString()}.-</div></div>`;
                 
                 const borrowsToChart = filterMonth ? state.borrows.filter(b => b.borrow_date.startsWith(filterMonth)) : state.borrows;
                 const repairsToChart = filterMonth ? state.repairs.filter(r => (r.request_date || '').startsWith(filterMonth)) : state.repairs;
@@ -1318,6 +1437,44 @@
                     data: { labels: Object.keys(dailyRepairCosts), datasets: [{ label: 'ค่าซ่อม (บาท)', data: Object.values(dailyRepairCosts), backgroundColor: 'rgba(217, 70, 239, 0.2)', borderColor: 'rgba(217, 70, 239, 1)', fill: true, tension: 0.1 }] },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'ค่าใช้จ่ายการซ่อมรายวัน' } }, scales: { y: { beginAtZero: true } } }
                 });
+                
+                // New Analytics Rendering
+                const mostRepairedList = $('#mostRepairedList');
+                if (reportData.mostRepairedEquipment.length > 0) {
+                    mostRepairedList.innerHTML = `<ol class="list-decimal list-inside space-y-1 text-slate-700">${reportData.mostRepairedEquipment.map(e => `<li>${e.name} <span class="text-slate-500">(S/N: ${e.serial}, ${e.count} ครั้ง)</span></li>`).join('')}</ol>`;
+                } else {
+                    mostRepairedList.innerHTML = `<p class="text-slate-500">ไม่มีข้อมูลการซ่อม</p>`;
+                }
+                
+                if (borrowByTypeChartInstance) borrowByTypeChartInstance.destroy();
+                borrowByTypeChartInstance = new Chart($('#borrowByTypeChart').getContext('2d'), {
+                    type: 'pie',
+                    data: { 
+                        labels: Object.keys(reportData.borrowingByType), 
+                        datasets: [{ 
+                            label: 'จำนวนครั้งที่ยืม', 
+                            data: Object.values(reportData.borrowingByType),
+                            backgroundColor: ['#4f46e5', '#7c3aed', '#0ea5e9', '#f59e0b', '#10b981', '#ef4444']
+                        }] 
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'สัดส่วนการยืมตามประเภท' } } }
+                });
+                
+                // Technician Section
+                const techSection = $('#technicianReportSection');
+                if (['admin', 'technician'].includes(state.user.role)) {
+                    techSection.classList.remove('hidden');
+                    $('#techReportCards').innerHTML = `<div class="rounded-xl p-4 bg-sky-100 text-sky-800"><div class="text-sm">ระยะเวลาซ่อมเฉลี่ย</div><div class="text-3xl font-bold mt-1">${reportData.averageRepairTime.toFixed(1)} <span class="text-lg">วัน</span></div></div><div class="rounded-xl p-4 bg-orange-100 text-orange-800"><div class="text-sm">งานซ่อมที่ค้างอยู่</div><div class="text-3xl font-bold mt-1">${reportData.pendingRepairsCount} <span class="text-lg">รายการ</span></div></div>`;
+                    
+                    const frequentPartsList = $('#frequentPartsList');
+                    if(reportData.frequentlyUsedParts.length > 0) {
+                        frequentPartsList.innerHTML = `<ol class="list-decimal list-inside space-y-1 text-slate-700">${reportData.frequentlyUsedParts.map(([part, count]) => `<li class="capitalize">${part} <span class="text-slate-500">(${count} ครั้ง)</span></li>`).join('')}</ol>`;
+                    } else {
+                        frequentPartsList.innerHTML = `<p class="text-slate-500">ยังไม่มีข้อมูลการใช้อะไหล่</p>`;
+                    }
+                } else {
+                    techSection.classList.add('hidden');
+                }
             }
             async function renderAdminTab() {
                 if (!state.user || state.user.role !== 'admin' || !$('#adminTab')) return;
@@ -1354,30 +1511,6 @@
                     </tr>`;
                 }).join('') || `<tr><td colspan="5" class="text-center p-4 text-slate-500">ไม่พบผู้ใช้งาน</td></tr>`;
                 
-                // Groups Management
-                const groups = await api.listGroups();
-                const groupListContainer = $('#adminGroupList');
-                if(groupListContainer) {
-                    groupListContainer.innerHTML = groups.length === 0 
-                    ? `<p class="text-slate-500 text-center py-4">ยังไม่มีกลุ่มผู้ใช้</p>` 
-                    : groups.map(g => `
-                        <div class="p-4 rounded-lg border border-slate-200 bg-white">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <p class="font-semibold text-slate-800">${g.name}</p>
-                                    <p class="text-sm text-slate-500">${g.description || 'ไม่มีคำอธิบาย'}</p>
-                                    <span class="mt-2 inline-block text-xs font-medium px-2 py-1 rounded-full bg-indigo-100 text-indigo-800">${g.user_ids.length} สมาชิก</span>
-                                </div>
-                                <div class="flex gap-2">
-                                    <button onclick="handleEditGroupClick(${g.id})" class="text-xs text-blue-600 hover:underline">แก้ไข</button>
-                                    <button onclick="handleDeleteGroupClick(${g.id})" class="text-xs text-red-600 hover:underline">ลบ</button>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('');
-                }
-
-
                 // Activity Log
                 const logQ = $('#adminLogSearch').value.toLowerCase();
                 const filteredLogs = state.activityLog.filter(log => logQ === '' || log.details.toLowerCase().includes(logQ) || log.admin_name.toLowerCase().includes(logQ) || log.action.toLowerCase().includes(logQ));
@@ -1448,6 +1581,17 @@
                     const base64Image = repair.attachments[attachmentIndex];
                     const content = `<img src="${base64Image}" class="max-w-full max-h-[80vh] mx-auto rounded-lg">`;
                     showModal('ดูรูปภาพ', content, '');
+                }
+            };
+             window.handleConfirmDelivery = async (borrowId) => {
+                if (confirm(`ยืนยันการส่งมอบสำหรับคำขอยืม #${borrowId} หรือไม่? (อุปกรณ์ถือว่าอยู่ในสภาพปกติ)`)) {
+                    try {
+                        await api.performPreDeliveryCheck(borrowId, [], {}); 
+                        toast('ยืนยันการส่งมอบสำเร็จ');
+                        fullRender();
+                    } catch(e) {
+                        toast(e.message, true);
+                    }
                 }
             };
             
@@ -1907,51 +2051,6 @@
                  const actions = `<button type="button" onclick="hideModal()" class="px-4 py-2 rounded-lg bg-slate-100">ยกเลิก</button><button type="submit" form="deleteEquipForm" class="px-4 py-2 rounded-lg bg-red-600 text-white">ยืนยันการลบ</button>`;
                 showModal('ยืนยันการลบอุปกรณ์', content, actions);
             };
-            const getUserCheckboxesHTML = (selectedUserIds = []) => {
-                const allUsers = state.users.filter(u => u.status === 'active');
-                return allUsers.map(user => `
-                    <label class="flex items-center p-2 rounded-md hover:bg-slate-100">
-                        <input type="checkbox" name="user_ids" value="${user.id}" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" ${selectedUserIds.includes(user.id) ? 'checked' : ''}>
-                        <span class="ml-2 text-sm">${user.full_name} <span class="text-slate-500">(${roleMap[user.role]})</span></span>
-                    </label>
-                `).join('') || '<p class="p-2 text-sm text-slate-500">ไม่มีผู้ใช้งานที่ใช้งานได้ในระบบ</p>';
-            };
-            window.handleCreateGroupClick = () => {
-                const content = `
-                <form id="groupForm" class="space-y-3">
-                    <input name="name" required placeholder="ชื่อกลุ่ม" class="w-full px-3 py-2 rounded-lg border border-slate-300">
-                    <textarea name="description" placeholder="คำอธิบายกลุ่ม (ไม่บังคับ)" rows="2" class="w-full px-3 py-2 rounded-lg border border-slate-300"></textarea>
-                    <h4 class="font-semibold text-slate-800 pt-2">สมาชิกกลุ่ม</h4>
-                    <div class="max-h-60 overflow-y-auto border rounded-lg p-2 bg-slate-50">${getUserCheckboxesHTML()}</div>
-                </form>`;
-                const actions = `<button type="button" onclick="hideModal()" class="px-4 py-2 rounded-lg bg-slate-100">ยกเลิก</button><button type="submit" form="groupForm" class="px-4 py-2 rounded-lg bg-indigo-600 text-white">สร้างกลุ่ม</button>`;
-                showModal('สร้างกลุ่มใหม่', content, actions);
-            };
-            window.handleEditGroupClick = (id) => {
-                const group = state.groups.find(g => g.id === id);
-                const content = `
-                <form id="groupForm" data-id="${id}" class="space-y-3">
-                    <input name="name" required placeholder="ชื่อกลุ่ม" class="w-full px-3 py-2 rounded-lg border border-slate-300" value="${group.name}">
-                    <textarea name="description" placeholder="คำอธิบายกลุ่ม (ไม่บังคับ)" rows="2" class="w-full px-3 py-2 rounded-lg border border-slate-300">${group.description || ''}</textarea>
-                    <h4 class="font-semibold text-slate-800 pt-2">สมาชิกกลุ่ม</h4>
-                    <div class="max-h-60 overflow-y-auto border rounded-lg p-2 bg-slate-50">${getUserCheckboxesHTML(group.user_ids)}</div>
-                </form>`;
-                const actions = `<button type="button" onclick="hideModal()" class="px-4 py-2 rounded-lg bg-slate-100">ยกเลิก</button><button type="submit" form="groupForm" class="px-4 py-2 rounded-lg bg-indigo-600 text-white">บันทึกการเปลี่ยนแปลง</button>`;
-                showModal(`แก้ไขกลุ่ม: ${group.name}`, content, actions);
-            };
-            window.handleDeleteGroupClick = (id) => {
-                const group = state.groups.find(g => g.id === id);
-                const content = `<p>คุณแน่ใจหรือไม่ว่าต้องการลบกลุ่ม <strong>${group.name}</strong>? การกระทำนี้ไม่สามารถย้อนกลับได้</p>`;
-                const actions = `<button type="button" onclick="hideModal()" class="px-4 py-2 rounded-lg bg-slate-100">ยกเลิก</button>
-                                 <button type="button" id="confirmDeleteGroupBtn" data-id="${id}" class="px-4 py-2 rounded-lg bg-red-600 text-white">ยืนยันการลบ</button>`;
-                showModal('ยืนยันการลบกลุ่ม', content, actions);
-                 $('#confirmDeleteGroupBtn').onclick = async (e) => {
-                    await api.deleteGroup(parseInt(e.target.dataset.id));
-                    toast('ลบกลุ่มสำเร็จ');
-                    hideModal();
-                    fullRender();
-                };
-            };
             window.handleReportProblem = () => {
                 const content = `<form id="reportProblemForm"><p class="text-sm text-slate-600 mb-3">กรุณาอธิบายปัญหาที่พบ หรือให้ข้อเสนอแนะเพื่อการพัฒนา</p><textarea name="problem_description" rows="5" class="w-full px-3 py-2 rounded-lg border border-slate-200" required placeholder="อธิบายปัญหา..."></textarea></form>`;
                 const actions = `<button type="button" onclick="hideModal()" class="px-4 py-2 rounded-lg bg-slate-100">ยกเลิก</button><button type="submit" form="reportProblemForm" class="px-4 py-2 rounded-lg bg-indigo-600 text-white">ส่งข้อความ</button>`;
@@ -2050,17 +2149,6 @@
                              toast(`อัปเดตสถานะ ${state.selectedEquipment.size} รายการสำเร็จ`);
                              state.selectedEquipment.clear();
                              break;
-                        case 'groupForm':
-                            const user_ids = Array.from(formData.getAll('user_ids')).map(Number);
-                            const groupData = { name: data.name, description: data.description, user_ids };
-                            if(id) {
-                                await api.updateGroup(id, groupData);
-                                toast('แก้ไขกลุ่มสำเร็จ');
-                            } else {
-                                await api.createGroup(groupData);
-                                toast('สร้างกลุ่มใหม่สำเร็จ');
-                            }
-                            break;
                         case 'addUserForm':
                              if (state.users.some(u => u.email === data.email) || state.pendingUsers.some(u => u.email === data.email)) throw new Error('อีเมลนี้ถูกใช้แล้ว');
                              const newUser = { id: state.seq.user++, ...data, status: 'active' };
@@ -2130,8 +2218,6 @@
 
             function applyRoleVisibility() {
                 const loggedIn = !!state.user;
-                $('#nav-actions').classList.toggle('hidden', window.innerWidth < 768 && loggedIn);
-                $('#hamburgerBtn')?.classList.toggle('hidden', !loggedIn);
                 $('#btnLogin').classList.toggle('hidden', loggedIn);
                 $('#btnRegister').classList.toggle('hidden', loggedIn);
                 $('#userInfo').classList.toggle('hidden', !loggedIn);
@@ -2147,13 +2233,14 @@
                     { id: 'equipmentTab', label: 'ภาพรวมอุปกรณ์', roles: ['admin', 'user', 'technician', 'approver'] },
                     { id: 'borrowTab', label: 'ยืมอุปกรณ์', roles: ['user'] },
                     { id: 'borrowHistoryTab', label: 'ประวัติการยืม', roles: ['user'] },
+                    { id: 'approvalTab', label: 'จัดการคำขอ', roles: ['admin', 'approver'] },
+                    { id: 'deliveryTab', label: 'ส่งมอบ', roles: ['admin', 'technician'] },
                     { id: 'techTab', label: 'ส่วนงานช่าง', roles: ['admin', 'technician'] },
                     { id: 'repairHistoryTab', label: 'ประวัติการซ่อม', roles: ['admin', 'technician'] },
-                    { id: 'approvalTab', label: 'จัดการคำขอ', roles: ['admin', 'approver'] },
                     { id: 'approvalHistoryTab', label: 'ประวัติการอนุมัติ', roles: ['admin', 'approver'] },
                     { id: 'assessmentTab', label: 'ประเมินมาตรฐาน', roles: ['admin', 'technician'] },
                     { id: 'assessmentHistoryTab', label: 'ประวัติการประเมิน', roles: ['admin', 'technician'] },
-                    { id: 'reportTab', label: 'รายงาน', roles: ['admin', 'approver'] },
+                    { id: 'reportTab', label: 'รายงาน', roles: ['admin', 'approver', 'technician'] },
                     { id: 'adminTab', label: 'ส่วนผู้ดูแลระบบ', roles: ['admin'] }
                 ];
                 const desktopTabsContainer = $('#desktopTabs');
@@ -2257,9 +2344,10 @@
                 addListener('#borrowForm', 'submit', handleBorrowSubmit);
                 addListener('#modalClose', 'click', hideModal);
                 addListener('#modal', 'click', (e) => { if (e.target.id === 'modal') hideModal() });
-                document.addEventListener('submit', (e) => { if (['preDeliveryForm', 'postReturnForm', 'completeRepairForm', 'assessmentForm', 'bulkAddEquipForm', 'editEquipForm', 'replaceEquipForm', 'reportProblemForm', 'deleteEquipForm', 'addUserForm', 'editUserForm', 'bulkDeleteEquipForm', 'bulkEditStatusForm', 'groupForm'].includes(e.target.id)) { handleDynamicFormSubmit(e); } });
+                document.addEventListener('submit', (e) => { if (['preDeliveryForm', 'postReturnForm', 'completeRepairForm', 'assessmentForm', 'bulkAddEquipForm', 'editEquipForm', 'replaceEquipForm', 'reportProblemForm', 'deleteEquipForm', 'addUserForm', 'editUserForm', 'bulkDeleteEquipForm', 'bulkEditStatusForm'].includes(e.target.id)) { handleDynamicFormSubmit(e); } });
                 addListener('#dashEquipSearch', 'input', () => renderEquipmentLists({ forAssessment: true }));
                 addListener('#dashEquipFilter', 'change', () => renderEquipmentLists({ forAssessment: true }));
+                addListener('#dashEquipTypeFilter', 'change', () => renderEquipmentLists({ forAssessment: true }));
                 addListener('#assessmentTypeFilter', 'change', () => renderEquipmentLists({ forAssessment: true }));
                 addListener('#borrowDate', 'change', (e) => { if (e.target.value) { const d = new Date(e.target.value); d.setDate(d.getDate() + 7); $('#dueDate').value = d.toISOString().slice(0, 10); } else { $('#dueDate').value = ''; } });
                 addListener('#reportMonthFilter', 'change', renderReports);
@@ -2301,7 +2389,6 @@
 
                 // Admin Tab Listeners
                 addListener('#adminAddUserBtn', 'click', handleAddUserClick);
-                addListener('#adminAddGroupBtn', 'click', handleCreateGroupClick);
                 addListener('#adminUserSearch', 'input', renderAdminTab);
                 addListener('#adminUserRoleFilter', 'change', renderAdminTab);
                 addListener('#adminUserStatusFilter', 'change', renderAdminTab);
@@ -2446,6 +2533,14 @@
                 const select = $('#assessmentTypeFilter');
                 if (select) { select.innerHTML = '<option value="">ทุกประเภท</option>' + types.map(t => `<option value="${t}">${t}</option>`).join(''); }
             }
+            function populateEquipmentTypeFilter() {
+                const types = [...new Set(state.equipment.map(e => e.type))].sort();
+                const select = $('#dashEquipTypeFilter');
+                if (select) { 
+                    while(select.options.length > 1) { select.remove(1); }
+                    select.innerHTML += types.map(t => `<option value="${t}">${t}</option>`).join(''); 
+                }
+            }
             function fullRender() {
                 applyRoleVisibility();
                 if (state.user) {
@@ -2453,7 +2548,7 @@
                     let defaultTab = 'equipmentTab';
                     if (role === 'approver') defaultTab = 'approvalTab';
                     if (role === 'user') defaultTab = 'borrowTab';
-                    if (role === 'technician') defaultTab = 'techTab';
+                    if (role === 'technician') defaultTab = 'deliveryTab';
                     if (role === 'admin') defaultTab = 'adminTab';
                     
                     const currentActiveTab = $('#desktopTabs .bg-white')?.dataset?.tab;
@@ -2461,13 +2556,14 @@
                         { id: 'equipmentTab', label: 'ภาพรวมอุปกรณ์', roles: ['admin', 'user', 'technician', 'approver'] },
                         { id: 'borrowTab', label: 'ยืมอุปกรณ์', roles: ['user'] },
                         { id: 'borrowHistoryTab', label: 'ประวัติการยืม', roles: ['user'] },
+                        { id: 'approvalTab', label: 'จัดการคำขอ', roles: ['admin', 'approver'] },
+                        { id: 'deliveryTab', label: 'ส่งมอบ', roles: ['admin', 'technician'] },
                         { id: 'techTab', label: 'ส่วนงานช่าง', roles: ['admin', 'technician'] },
                         { id: 'repairHistoryTab', label: 'ประวัติการซ่อม', roles: ['admin', 'technician'] },
-                        { id: 'approvalTab', label: 'จัดการคำขอ', roles: ['admin', 'approver'] },
                         { id: 'approvalHistoryTab', label: 'ประวัติการอนุมัติ', roles: ['admin', 'approver'] },
                         { id: 'assessmentTab', label: 'ประเมินมาตรฐาน', roles: ['admin', 'technician'] },
                         { id: 'assessmentHistoryTab', label: 'ประวัติการประเมิน', roles: ['admin', 'technician'] },
-                        { id: 'reportTab', label: 'รายงาน', roles: ['admin', 'approver'] },
+                        { id: 'reportTab', label: 'รายงาน', roles: ['admin', 'approver', 'technician'] },
                         { id: 'adminTab', label: 'ส่วนผู้ดูแลระบบ', roles: ['admin'] }
                     ];
                     const currentTabInfo = allTabs.find(t => t.id === currentActiveTab);
@@ -2481,12 +2577,14 @@
                     renderApprovalLists();
                     renderApprovalHistory();
                     renderTechnicianQueues();
+                    renderDeliveryTab();
                     renderRepairHistory();
                     renderReports();
                     renderAdminTab();
                     renderAssessmentHistory();
                     populateBorrowTypeList();
                     populateAssessmentFilter();
+                    populateEquipmentTypeFilter();
                     populateApprovalActionFilter();
                     renderNotifications();
                     updateBulkActionUI();
