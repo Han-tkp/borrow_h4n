@@ -32,7 +32,7 @@ const ApprovalHistoryTab = () => {
                     {logs.length > 0 ? logs.map(log => (
                         <div key={log.id} className="flex items-center gap-3 p-2.5 border-b border-slate-100">
                             <div className="flex-grow">
-                                <p className="font-medium text-sm text-slate-800">{log.details}</p>
+                                <p className="font-medium text-sm text-slate-800">{JSON.stringify(log.details)}</p>
                                 <p className="text-xs text-slate-500">{log.timestamp?.toDate().toLocaleString('th-TH')} by {log.admin_name}</p>
                             </div>
                         </div>

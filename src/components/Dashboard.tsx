@@ -17,14 +17,14 @@ import AdminTab from './dashboard/AdminTab';
 const allTabs = [
     { id: 'equipmentTab', label: 'ภาพรวมอุปกรณ์', roles: ['admin', 'user', 'technician', 'approver'] },
     { id: 'borrowTab', label: 'ยืมอุปกรณ์', roles: ['user'] },
-    { id: 'borrowHistoryTab', label: 'ประวัติการยืม', roles: ['user'] },
+    { id: 'borrowHistoryTab', label: 'ประวัติการยืม', roles: ['user', 'admin'] },
     { id: 'approvalTab', label: 'จัดการคำขอ', roles: ['approver'] }, // Removed 'admin'
     { id: 'deliveryTab', label: 'คิวงานตรวจสภาพ', roles: ['technician'] }, // Removed 'admin'
     { id: 'techTab', label: 'รายการซ่อมบำรุง', roles: ['technician'] }, // Removed 'admin'
     { id: 'repairHistoryTab', label: 'ประวัติการซ่อม', roles: ['technician'] }, // Removed 'admin'
-    { id: 'approvalHistoryTab', label: 'ประวัติการอนุมัติ', roles: ['approver'] }, // Removed 'admin'
+    { id: 'approvalHistoryTab', label: 'ประวัติการอนุมัติ', roles: ['approver', 'admin'] }, // Removed 'admin'
     { id: 'assessmentTab', label: 'ประเมินมาตรฐาน', roles: ['technician'] }, // Removed 'admin'
-    { id: 'assessmentHistoryTab', label: 'ประวัติการประเมิน', roles: ['technician'] }, // Removed 'admin'
+    { id: 'assessmentHistoryTab', label: 'ประวัติการประเมิน', roles: ['technician', 'admin'] }, // Removed 'admin'
     { id: 'reportTab', label: 'รายงาน', roles: ['admin', 'approver', 'technician'] },
     { id: 'adminTab', label: 'ส่วนผู้ดูแลระบบ', roles: ['admin'] }
 ];
