@@ -82,9 +82,15 @@ const ApprovalTab = () => {
                             ? <p className="text-slate-500">ไม่มีคำขอยืมรออนุมัติ</p> 
                             : borrowRequests.map(b => (
                                 <div key={b.id} className="p-3 rounded-lg border border-slate-200">
-                                    <p><span className="font-semibold">{b.user_name}</span> ขอยืม <span className="font-semibold">{b.equipment_ids?.length || 0} เครื่อง</span></p>
+                                    <p><span className="font-semibold">{b.user_name}</span> ขอยืม <span className="font-semibold">{b.equipment_requests?.reduce((acc, req) => acc + req.quantity, 0) || 0} เครื่อง</span></p>
                                     <div className="text-sm text-slate-600 bg-slate-50 p-2 rounded-md mt-1">
                                         <p><strong>วัตถุประสงค์:</strong> {b.purpose}</p>
+                                        <p><strong>รายการ:</strong></p>
+                                        <ul className="list-disc pl-5">
+                                            {b.equipment_requests.map(req => (
+                                                <li key={req.type}>{req.type} (จำนวน: {req.quantity})</li>
+                                            ))}
+                                        </ul>
                                     </div>
                                     <div className="mt-2 flex justify-between items-center">
                                         <div className="flex gap-2">

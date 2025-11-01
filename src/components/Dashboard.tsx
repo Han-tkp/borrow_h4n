@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAppContext } from '../App';
 import EquipmentTab from './dashboard/EquipmentTab';
 import BorrowTab from './dashboard/BorrowTab';
 import BorrowHistoryTab from './dashboard/BorrowHistoryTab';
@@ -29,29 +30,32 @@ const allTabs = [
     { id: 'adminTab', label: 'ส่วนผู้ดูแลระบบ', roles: ['admin'] }
 ];
 
-const Dashboard = ({ userRole }: { userRole: string }) => {
+const Dashboard = () => {
+    const { user } = useAppContext(); // Get user from context
     const [activeTab, setActiveTab] = useState('equipmentTab');
 
     // Filter tabs based on user role
-    const visibleTabs = allTabs.filter(tab => tab.roles.includes(userRole));
+    const visibleTabs = allTabs.filter(tab => user && tab.roles.includes(user.role));
 
     // Set active tab to the first visible tab if the current active tab is no longer visible
     useEffect(() => {
         if (!visibleTabs.some(tab => tab.id === activeTab)) {
             setActiveTab(visibleTabs[0]?.id || 'equipmentTab');
         }
-    }, [userRole, visibleTabs, activeTab]);
+    }, [user?.role, visibleTabs, activeTab]); // Add user?.role to dependencies
 
     const renderActiveTab = () => {
+        if (!user) return null; // Render nothing if user is not available
+
         switch (activeTab) {
             case 'equipmentTab': return <EquipmentTab />;
             case 'borrowTab': return <BorrowTab />;
-            case 'borrowHistoryTab': return <BorrowHistoryTab />;
+            case 'borrowHistoryTab': return <BorrowHistoryTab userId={user.uid} />;
             case 'techTab': return <TechTab />;
             case 'deliveryTab': return <DeliveryTab />;
             case 'repairHistoryTab': return <RepairHistoryTab />;
             case 'approvalTab': return <ApprovalTab />;
-            case 'approvalHistoryTab': return <ApprovalHistoryTab />;
+            case 'approvalHistoryTab': return <ApprovalHistoryTab userId={user.uid} />;
             case 'assessmentTab': return <AssessmentTab />;
             case 'assessmentHistoryTab': return <AssessmentHistoryTab />;
             case 'reportTab': return <ReportTab />;
@@ -59,6 +63,10 @@ const Dashboard = ({ userRole }: { userRole: string }) => {
             default: return <EquipmentTab />;
         }
     };
+
+    if (!user) {
+        return <p>Loading user data...</p>; // Or a loading spinner
+    }
 
     return (
         <section id="dashboard" className="fade-in">

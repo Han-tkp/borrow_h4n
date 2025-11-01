@@ -43,55 +43,35 @@ const App = () => {
                         console.log('User is signed in:', firebaseUser.uid);
                         let userProfile = await getUserProfile(firebaseUser.uid);
         
-                                        if (!userProfile) {
-                                            console.log('No profile found, creating new one...');
-                                            const specialRoles: { [key: string]: string } = {
-                                                'admin@nrt.web.app': 'admin',
-                                                'approver@nrt.web.app': 'approver',
-                                                'tech@nrt.web.app': 'technician',
-                                                'user@nrt.web.app': 'user'
-                                            };
-                                            const role = specialRoles[firebaseUser.email!] || 'user';
-                                            
-                                            // Staff accounts are activated immediately, others need approval.
-                                            const status = ['admin', 'approver', 'technician'].includes(role) ? 'active' : 'pending_approval';
-                        
-                                            const newUserProfile = { name: firebaseUser.displayName, email: firebaseUser.email, role: role, status: status };
-                                            await createUserProfile(firebaseUser.uid, newUserProfile);
-                        
-                                            // If approval is needed, sign out and alert the user.
-                                            if (status === 'pending_approval') {
-                                                alert('ลงทะเบียนสำเร็จ! บัญชีของคุณกำลังรอการอนุมัติจากผู้ดูแลระบบ');
-                                                auth.signOut();
-                                                setLoading(false);
-                                                return; // Stop execution for this user
-                                            }
-                        
-                                            // If user was auto-activated, proceed to log them in.
-                                            console.log('Staff account auto-activated.');
-                                            setUser({ uid: firebaseUser.uid, ...newUserProfile });
-                                            navigate('/dashboard');
-                                            setLoading(false);
-                                            return; // Stop execution to prevent hitting the logic below
-                                        }        
-                                                        // If profile exists, check its status
-                                                        const specialRoles = ['admin', 'approver', 'technician'];                                        if (userProfile.status !== 'active' && specialRoles.includes(userProfile.role)) {
-                                            console.log('Found staff account with inactive status. Activating now...');
-                                            await updateUser(firebaseUser.uid, { status: 'active' });
-                                            userProfile.status = 'active'; // Update local object for this session
-                                        }
-                        
-                                        if (userProfile.status === 'active') {
-                                            console.log('User is active, navigating to dashboard.');
-                                            setUser({ uid: firebaseUser.uid, ...userProfile });
-                                            navigate('/dashboard');
-                                        } else if (userProfile.status === 'pending_approval') {
-                                            alert('บัญชีของคุณกำลังรอการอนุมัติ');
-                                            auth.signOut();
-                                        } else {
-                                            alert('บัญชีของคุณถูกระงับหรือถูกลบ');
-                                            auth.signOut();
-                                        }        
+                        if (userProfile) {
+                            // If profile exists, check its status
+                            const specialRoles = ['admin', 'approver', 'technician'];
+                            if (userProfile.status !== 'active' && specialRoles.includes(userProfile.role)) {
+                                console.log('Found staff account with inactive status. Activating now...');
+                                await updateUser(firebaseUser.uid, { status: 'active' });
+                                userProfile.status = 'active'; // Update local object for this session
+                            }
+
+                            if (userProfile.status === 'active') {
+                                console.log('User is active, navigating to dashboard.');
+                                // Determine if this is the main system account by email
+                                const isMainAdmin = firebaseUser.email === 'admin@nrt.web.app';
+                                userProfile.isMainAccount = isMainAdmin; // Add this property
+                                setUser({ uid: firebaseUser.uid, ...userProfile });
+                                navigate('/dashboard');
+                            } else if (userProfile.status === 'pending_approval') {
+                                alert('บัญชีของคุณกำลังรอการอนุมัติ');
+                                auth.signOut();
+                            } else {
+                                alert('บัญชีของคุณถูกระงับหรือถูกลบ');
+                                auth.signOut();
+                            }
+                        } else {
+                            // This case should ideally not be hit if profiles are created upon registration.
+                            // However, as a fallback, we can sign the user out.
+                            alert('ไม่พบบัญชีผู้ใช้ของคุณ โปรดติดต่อผู้ดูแลระบบ');
+                            auth.signOut();
+                        }
                     } else {
                         console.log('User is signed out.');
                         setUser(null);

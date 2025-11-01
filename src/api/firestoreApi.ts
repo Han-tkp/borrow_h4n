@@ -1,5 +1,6 @@
-import { db, auth } from './firebase';
-import firebase from 'firebase/compat/app';
+import { db, auth, storage } from './firebase';
+import firebase from 'firebase/app';
+import 'firebase/firestore';
 
 // --- Helper --- //
 const logAdminActivity = (batch, action: string, details: any) => {
@@ -46,18 +47,39 @@ export const getEquipmentList = async (filters: { q?: string, f?: string, t?: st
         equipmentQuery = equipmentQuery.where("type", "==", t);
     }
 
-    const snapshot = await equipmentQuery.get();
-    let equipmentList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const [equipmentSnapshot, typesSnapshot] = await Promise.all([
+        equipmentQuery.get(),
+        db.collection("equipmentTypes").get() // Fetch all equipment types
+    ]);
+
+    const typeImageMap = new Map();
+    typesSnapshot.docs.forEach(doc => {
+        typeImageMap.set(doc.id, doc.data().imageUrl);
+    });
+
+    let equipmentList = equipmentSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        typeImageUrl: typeImageMap.get(doc.data().type) || null // Add typeImageUrl
+    }));
 
     if (q) {
         const lowerCaseQuery = q.toLowerCase();
         equipmentList = equipmentList.filter(e =>
             (e.name?.toLowerCase().includes(lowerCaseQuery)) ||
-            (e.serial?.toLowerCase().includes(lowerCaseQuery))
-        );
+            (e.serial?.toLowerCase().includes(lowerCaseQuery)) ||
+            (e.type?.toLowerCase().includes(lowerCaseQuery))
+            );
     }
     return equipmentList;
 };
+
+export const getEquipmentTypes = async () => {
+    const snapshot = await db.collection('equipment').get();
+    const types = snapshot.docs.map(doc => doc.data().type);
+    return [...new Set(types)];
+};
+
 
 // --- User Approvals & Management --- //
 export const getPendingUsers = async () => {
@@ -109,18 +131,39 @@ export const signInWithEmail = (email, password) => {
     return auth.signInWithEmailAndPassword(email, password);
 };
 
-export const registerWithEmail = (email, password, fullName, otherData) => {
-    return auth.createUserWithEmailAndPassword(email, password);
+export const registerWithEmail = async (email, password, fullName, otherData) => {
+    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+    if (user) {
+        await user.updateProfile({ displayName: fullName });
+        await createUserProfile(user.uid, {
+            name: fullName,
+            email: user.email,
+            role: otherData.role || 'user',
+            status: 'active', // Set status to active by default for admin-created users
+        });
+    }
+    return userCredential;
+};
+
+export const reauthenticate = async (password: string) => {
+    const user = auth.currentUser;
+    if (user && user.email) {
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, password);
+        return user.reauthenticateWithCredential(credential);
+    }
+    throw new Error("User not found or email not available.");
 };
 
 // --- Equipment Management --- //
-export const addEquipment = (data: any) => {
+export const addEquipment = async (data: any) => {
     const batch = db.batch();
     const docRef = db.collection("equipment").doc();
     const newData = { ...data, status: 'available', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
     batch.set(docRef, newData);
     logAdminActivity(batch, 'ADD_EQUIPMENT', { equipmentId: docRef.id, name: data.name, serial: data.serial, type: data.type });
-    return batch.commit();
+    await batch.commit();
+    return docRef.id;
 };
 
 export const updateStatusOfMultipleEquipment = async (ids: string[], status: string) => {
@@ -141,23 +184,69 @@ export const deleteEquipment = async (id: string, reason: string) => {
     const batch = db.batch();
     const docRef = db.collection('equipment').doc(id);
     const deletedEquipmentData = (await docRef.get()).data(); // Fetch data before deletion
-    batch.delete(docRef);
+    batch.update(docRef, { status: 'deleted' });
     logAdminActivity(batch, 'DELETE_EQUIPMENT', { equipmentId: id, name: deletedEquipmentData?.name, serial: deletedEquipmentData?.serial, reason });
     return batch.commit();
 };
 
 export const deleteMultipleEquipment = async (ids: string[], reason: string) => {
-    const batch = db.batch();
-    const deletedEquipmentDetails: any[] = [];
 
-    for (const id of ids) {
-        const docRef = db.collection('equipment').doc(id);
-        const deletedData = (await docRef.get()).data(); // Fetch data before deletion
-        batch.delete(docRef);
-        deletedEquipmentDetails.push({ id, name: deletedData?.name, serial: deletedData?.serial });
+    const batchSize = 499; // Firestore batch limit is 500. Keep it slightly below to be safe.
+
+    const promises: Promise<void>[] = [];
+
+    const allDeletedEquipmentDetails: any[] = [];
+
+
+
+    for (let i = 0; i < ids.length; i += batchSize) {
+
+        const chunk = ids.slice(i, i + batchSize);
+
+        const batch = db.batch();
+
+        const deletedEquipmentDetails: any[] = [];
+
+
+
+        for (const id of chunk) {
+
+            const docRef = db.collection('equipment').doc(id);
+
+            const deletedData = (await docRef.get()).data(); // Fetch data before deletion
+
+            batch.delete(docRef);
+
+            deletedEquipmentDetails.push({ id, name: deletedData?.name, serial: deletedData?.serial });
+
+        }
+
+
+
+        logAdminActivity(batch, 'BATCH_DELETE_EQUIPMENT', {
+
+            equipmentIds: chunk,
+
+            count: chunk.length,
+
+            reason,
+
+            details: deletedEquipmentDetails
+
+        });
+
+        allDeletedEquipmentDetails.push(...deletedEquipmentDetails);
+
+        promises.push(batch.commit());
+
     }
-    logAdminActivity(batch, 'BATCH_DELETE_EQUIPMENT', { equipmentIds: ids, count: ids.length, reason, details: deletedEquipmentDetails });
-    return batch.commit();
+
+
+
+    await Promise.all(promises);
+
+    return allDeletedEquipmentDetails; // Return details of all deleted equipment
+
 };
 
 export const importEquipment = async (equipment: any[]) => {
@@ -172,6 +261,9 @@ export const importEquipment = async (equipment: any[]) => {
     logAdminActivity(batch, 'IMPORT_EQUIPMENT', { count: equipment.length, details: importedDetails });
     return batch.commit();
 };
+
+
+
 
 // --- Borrow & Repair --- //
 export const createBorrowRequest = async (borrowData: any) => {
@@ -192,7 +284,7 @@ export const createBorrowRequest = async (borrowData: any) => {
         due_date: due.toISOString().slice(0, 10),
     };
     batch.set(borrowRef, newBorrowRequest);
-    logAdminActivity(batch, 'CREATE_BORROW_REQUEST', { borrowId: borrowRef.id, purpose: borrowData.purpose, equipmentIds: borrowData.equipment_ids });
+    logAdminActivity(batch, 'CREATE_BORROW_REQUEST', { borrowId: borrowRef.id, purpose: borrowData.purpose, equipmentRequests: borrowData.equipment_requests });
     return batch.commit();
 };
 
@@ -211,7 +303,7 @@ export const approveBorrow = async (borrowId: string) => {
     const borrowRef = db.collection('borrows').doc(borrowId);
     const borrowData = (await borrowRef.get()).data();
     batch.update(borrowRef, { status: "pending_delivery" });
-    logAdminActivity(batch, 'APPROVE_BORROW', { borrowId, equipmentIds: borrowData?.equipment_ids });
+    logAdminActivity(batch, 'APPROVE_BORROW', { borrowId, equipmentRequests: borrowData?.equipment_requests });
     return batch.commit();
 };
 
@@ -220,7 +312,7 @@ export const rejectBorrow = async (borrowId: string) => {
     const borrowRef = db.collection('borrows').doc(borrowId);
     const borrowData = (await borrowRef.get()).data();
     batch.update(borrowRef, { status: "rejected" });
-    logAdminActivity(batch, 'REJECT_BORROW', { borrowId, equipmentIds: borrowData?.equipment_ids });
+    logAdminActivity(batch, 'REJECT_BORROW', { borrowId, equipmentRequests: borrowData?.equipment_requests });
     return batch.commit();
 };
 
@@ -320,9 +412,88 @@ export const getReportData = async (filterMonth?: string) => {
     };
 };
 
-export const getActivityLog = async () => {
-    const snapshot = await db.collection("activityLog").orderBy("timestamp", "desc").limit(100).get();
+export const getActivityLog = async (date?: string, isMainAccount: boolean = false, currentUserId?: string) => {
+    let query: firebase.firestore.Query = db.collection("activityLog").orderBy("timestamp", "desc");
+
+    if (!isMainAccount && currentUserId) {
+        // Non-main accounts only see their own logs
+        query = query.where('adminId', '==', currentUserId);
+    } else if (!isMainAccount && !currentUserId) {
+        // Fallback: if not main account and no user ID, return empty.
+        return [];
+    }
+    // If isMainAccount is true, no adminId filter is applied, so it fetches all logs.
+
+    if (date) {
+        const startDate = new Date(date);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(date);
+        endDate.setHours(23, 59, 59, 999);
+        query = query.where('timestamp', '>=', startDate).where('timestamp', '<=', endDate);
+    } else {
+        query = query.limit(100); // Default limit if no date filter
+    }
+
+    const snapshot = await query.get();
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+export const clearActivityLog = async () => {
+    const snapshot = await db.collection('activityLog').get();
+    const batch = db.batch();
+    snapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+    logAdminActivity(batch, 'CLEAR_ACTIVITY_LOG', { count: snapshot.size });
+    return batch.commit();
+};
+
+export const clearAssessmentHistory = async () => {
+    const snapshot = await db.collection('assessments').get();
+    const batch = db.batch();
+    snapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+    logAdminActivity(batch, 'CLEAR_ASSESSMENT_HISTORY', { count: snapshot.size });
+    return batch.commit();
+};
+
+export const clearBorrowHistory = async () => {
+    const snapshot = await db.collection('borrows').get();
+    const batch = db.batch();
+    snapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+    logAdminActivity(batch, 'CLEAR_BORROW_HISTORY', { count: snapshot.size });
+    return batch.commit();
+};
+
+export const clearRepairHistory = async () => {
+    const snapshot = await db.collection('repairs').get();
+    const batch = db.batch();
+    snapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+    logAdminActivity(batch, 'CLEAR_REPAIR_HISTORY', { count: snapshot.size });
+    return batch.commit();
+};
+
+export const uploadEquipmentTypeImage = async (equipmentType: string, file: File) => {
+    if (!file) throw new Error("No file provided for upload.");
+
+    const storageRef = storage.ref();
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `image.${fileExtension}`; // Standardize filename for type image
+    const imageRef = storageRef.child(`equipment_types/${equipmentType}/${fileName}`);
+
+    const uploadTask = await imageRef.put(file);
+    const imageUrl = await uploadTask.ref.getDownloadURL();
+
+    // Store the image URL in a new 'equipmentTypes' collection
+    const typeRef = db.collection("equipmentTypes").doc(equipmentType);
+    await typeRef.set({ imageUrl }, { merge: true }); // Use merge to not overwrite other fields if they exist
+
+    return imageUrl;
 };
 
 export const getAssessmentHistory = async () => {
