@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import catImage from '../img/cat.jpeg';
+import excelExampleImage from '../img/Screenshot 2025-11-09 175429.png';
 import { importEquipment } from '../api/firestoreApi'; // Import importEquipment
 
 // Helper function to get row values with case-insensitive and trimmed keys
@@ -116,7 +116,7 @@ const ImportModal = ({ onSuccess, onClose }) => {
                         <p className="text-sm font-mono bg-gray-100 p-2 rounded">name, serial, type, department, price, notes, status</p>
                         <h5 className="font-semibold text-sm">ตัวอย่าง:</h5>
                         <pre className="text-xs bg-gray-100 p-3 rounded">{csvExample}</pre>
-                        <img src={catImage} alt="Example Placeholder" className="w-32 h-32 object-cover rounded-lg"/>
+                        <img src={excelExampleImage} alt="Example Placeholder" className="w-full h-auto object-cover rounded-lg border border-gray-200"/>
                         <button onClick={() => handleFileSelectClick('csv')} className="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">เลือกไฟล์ .csv</button>
                     </div>
                 )}
@@ -125,7 +125,7 @@ const ImportModal = ({ onSuccess, onClose }) => {
                         <h4 className="font-semibold">รูปแบบไฟล์ Excel</h4>
                         <p className="text-sm text-gray-600">ไฟล์ Excel ควรมีหัวข้อคอลัมน์ (Header) เป็นภาษาไทยหรืออังกฤษก็ได้ ดังนี้:</p>
                         <p className="text-sm font-mono bg-gray-100 p-2 rounded">name (ชื่ออุปกรณ์), serial (เลขที่หรือรหัส), type (ประเภท), department (หน่วยงาน), price (ราคา), notes (หมายเหตุ), status (สถานะ)</p>
-                        <img src={catImage} alt="Example Placeholder" className="w-32 h-32 object-cover rounded-lg"/>
+                        <img src={excelExampleImage} alt="Example Placeholder" className="w-full h-auto object-cover rounded-lg border border-gray-200"/>
                         <button onClick={() => handleFileSelectClick('xlsx')} className="mt-4 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700">เลือกไฟล์ .xlsx หรือ .xls</button>
                     </div>
                 )}
