@@ -21,7 +21,7 @@ const Header = () => {
                         {!user ? (
                             <>
                                 <Link to="/login" className="px-4 py-2 rounded-lg hover:bg-white/10 transition text-white">เข้าสู่ระบบ</Link>
-                                <Link to="/register" className="px-4 py-2 rounded-lg bg-[var(--primary-color)] text-white font-semibold hover:opacity-90 transition">ลงทะเบียน</Link>
+                                <Link to="/register" className="px-4 py-2 rounded-lg bg-white text-black font-semibold hover:opacity-90 transition">ลงทะเบียน</Link>
                             </>
                         ) : (
                             <div className="flex items-center gap-3">
