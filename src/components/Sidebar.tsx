@@ -1,35 +1,62 @@
 import React from 'react';
+import { useAppContext } from '../App';
 
-const Sidebar = ({ isOpen, onClose }) => {
+const Sidebar = ({ isOpen, onClose, visibleTabs, activeTab, setActiveTab }) => {
+    const { user, handleLogout } = useAppContext();
+
+    const handleTabClick = (tabId) => {
+        setActiveTab(tabId);
+        onClose();
+    };
+
     return (
         <div id="sidebar" className={`fixed inset-0 z-40 md:hidden ${isOpen ? '' : 'pointer-events-none'}`}>
-            <div id="sidebarBackdrop"
+            {/* Backdrop */}
+            <div
                 className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
-                onClick={onClose}></div>
-            <div id="sidebarContent"
-                className={`relative z-10 w-64 bg-gradient-to-b from-[var(--primary-color)] to-[var(--primary-dark-color)] text-white h-full p-4 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                onClick={onClose}
+            ></div>
+            {/* Sidebar Content */}
+            <div
+                className={`relative z-10 w-72 bg-gray-800 text-white h-full p-4 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+            >
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="font-semibold text-lg">เมนู</h3>
-                    <button id="sidebarCloseBtn" onClick={onClose} className="p-2 text-2xl leading-none">&times;</button>
+                    <button onClick={onClose} className="p-2 text-2xl leading-none">&times;</button>
                 </div>
-                <nav id="sidebarNav" className="flex flex-col gap-2"></nav>
-                <div className="mt-auto pt-6 border-t border-white/10">
-                    <div id="sidebarUserInfo" className="hidden flex-col items-start gap-1">
-                        <span id="sidebarUserNameDisplay" className="text-sm font-semibold"></span>
-                        <span id="sidebarUserRoleDisplay"
-                            className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white"></span>
-                        <button id="reportProblemBtn"
-                            className="mt-4 text-left w-full text-sm text-slate-300 hover:text-white">แจ้งปัญหาระบบ</button>
-                        <button id="sidebarBtnLogout"
-                            className="mt-2 px-4 py-2 rounded-lg bg-red-500/20 text-red-100 hover:bg-red-500/40 transition text-sm w-full">ออกจากระบบ</button>
+
+                <nav className="flex-grow">
+                    <ul className="flex flex-col gap-2">
+                        {visibleTabs.map(tab => (
+                            <li key={tab.id}>
+                                <button
+                                    onClick={() => handleTabClick(tab.id)}
+                                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${activeTab === tab.id ? 'bg-indigo-600 text-white' : 'hover:bg-gray-700'}`}
+                                >
+                                    {tab.label}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </nav>
+
+                {user && (
+                    <div className="mt-auto pt-6 border-t border-gray-700">
+                        <div className="flex flex-col items-start gap-2">
+                            <span className="text-sm font-semibold">{user.name}</span>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white">{user.role}</span>
+                            <button
+                                onClick={() => {
+                                    handleLogout();
+                                    onClose();
+                                }}
+                                className="mt-4 w-full px-4 py-2 rounded-lg bg-red-500/80 text-white hover:bg-red-600 transition text-sm"
+                            >
+                                ออกจากระบบ
+                            </button>
+                        </div>
                     </div>
-                    <div id="sidebarLoginActions">
-                        <button id="sidebarBtnLogin"
-                            className="w-full px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition">เข้าสู่ระบบ</button>
-                        <button id="sidebarBtnRegister"
-                            className="mt-2 w-full px-4 py-2 rounded-lg bg-white text-slate-900 font-semibold hover:opacity-90 transition">ลงทะเบียน</button>
-                    </div>
-                </div>
+                )}
             </div>
         </div>
     );

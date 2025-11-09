@@ -15,15 +15,35 @@ import EquipmentShowcase from './components/EquipmentShowcase';
 
 const AppContext = createContext<any>(null);
 
+// Tab definitions moved to App.tsx
+const allTabs = [
+    { id: 'profileTab', label: 'ข้อมูลส่วนตัว', roles: ['admin', 'user', 'technician', 'approver'] },
+    { id: 'equipmentTab', label: 'ภาพรวมอุปกรณ์', roles: ['admin', 'user', 'technician', 'approver'] },
+    { id: 'borrowTab', label: 'ยืมอุปกรณ์', roles: ['user'] },
+    { id: 'borrowHistoryTab', label: 'ประวัติการยืม', roles: ['user', 'admin'] },
+    { id: 'approvalTab', label: 'จัดการคำขอ', roles: ['approver'] },
+    { id: 'techTab', label: 'งานของช่าง', roles: ['technician'] },
+    { id: 'repairHistoryTab', label: 'ประวัติการซ่อม', roles: ['technician', 'admin'] },
+    { id: 'approvalHistoryTab', label: 'ประวัติการอนุมัติ', roles: ['approver', 'admin'] },
+    { id: 'assessmentTab', label: 'ประเมินมาตรฐาน', roles: ['technician'] },
+    { id: 'standardAssessmentHistoryTab', label: 'ประวัติการประเมินมาตรฐาน', roles: ['technician', 'admin'] },
+    { id: 'reportTab', label: 'รายงาน', roles: ['admin', 'approver', 'technician'] },
+    { id: 'adminTab', label: 'ส่วนผู้ดูแลระบบ', roles: ['admin'] }
+];
+
 const App = () => {
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalContent, setModalContent] = useState<React.ReactNode>(null);
     const [modalTitle, setModalTitle] = useState('');
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false); // New state for sidebar
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('equipmentTab'); // Tab state moved to App.tsx
     const navigate = useNavigate();
     const location = useLocation();
+
+    // Filter tabs based on user role
+    const visibleTabs = user ? allTabs.filter(tab => tab.roles.includes(user.role)) : [];
 
     const showToast = (type: 'Success' | 'Error', message: string) => {
         const toast = document.getElementById('toast');
@@ -60,6 +80,14 @@ const App = () => {
     };
 
     useEffect(() => {
+        // Reset to default tab if the current one is no longer visible
+        if (user && !visibleTabs.some(tab => tab.id === activeTab)) {
+            setActiveTab(visibleTabs[0]?.id || 'equipmentTab');
+        }
+    }, [user, visibleTabs]);
+
+
+    useEffect(() => {
         console.log('Auth listener effect is running.');
                 const unsubscribe = auth.onAuthStateChanged(async firebaseUser => {
                     console.log('onAuthStateChanged callback fired.');
@@ -82,7 +110,9 @@ const App = () => {
                                 const isMainAdmin = firebaseUser.email === 'admin@nrt.web.app';
                                 userProfile.isMainAccount = isMainAdmin; // Add this property
                                 setUser({ uid: firebaseUser.uid, ...userProfile });
-                                navigate('/dashboard');
+                                if (location.pathname === '/' || location.pathname === '/login' || location.pathname === '/register') {
+                                    navigate('/dashboard');
+                                }
                             } else if (userProfile.status === 'pending_approval') {
                                 alert('บัญชีของคุณกำลังรอการอนุมัติ');
                                 auth.signOut();
@@ -127,10 +157,16 @@ const App = () => {
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/register" element={<RegisterPage />} />
                         <Route path="/equipment" element={<EquipmentShowcase />} />
-                        <Route path="/dashboard" element={user ? <Dashboard userRole={user.role} /> : <LoginPage />} />
+                        <Route path="/dashboard" element={user ? <Dashboard activeTab={activeTab} setActiveTab={setActiveTab} visibleTabs={visibleTabs} /> : <LoginPage />} />
                     </Routes>
                 </main>
-                <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
+                <Sidebar 
+                    isOpen={isSidebarOpen} 
+                    onClose={toggleSidebar} 
+                    visibleTabs={visibleTabs}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                />
                 <Modal isOpen={isModalOpen} title={modalTitle} onClose={hideModal}>
                     {modalContent}
                 </Modal>
