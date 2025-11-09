@@ -9,7 +9,7 @@ const AddEquipmentForm = ({ onSuccess }) => {
         serial: '',
         type: '',
         department: '',
-        price: 0,
+        price: '',
         notes: '',
         status: 'available'
     });
@@ -18,7 +18,13 @@ const AddEquipmentForm = ({ onSuccess }) => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: name === 'price' ? Number(value) : value }));
+        if (name === 'price') {
+            if (/^\d*\.?\d*$/.test(value)) {
+                setFormData(prev => ({ ...prev, [name]: value }));
+            }
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleTypeImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,8 +39,11 @@ const AddEquipmentForm = ({ onSuccess }) => {
         e.preventDefault();
         setLoading(true);
         try {
-      
-            const equipmentId = await addEquipment(formData);
+            const equipmentData = {
+                ...formData,
+                price: parseFloat(formData.price) || 0
+            };
+            const equipmentId = await addEquipment(equipmentData);
             if (typeImageFile) {
                 await uploadEquipmentTypeImage(formData.type, typeImageFile);
             }

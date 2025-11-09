@@ -1,4 +1,25 @@
-body {
-    font-family: 'Noto Sans Thai', system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-    background: radial-gradient(1200px 600px at 80% -10%, rgba(79, 70, 229, .18), transparent 60%), linear-gradient(135deg, #0ea5e9 0%, #2563eb 50%, #7c3aed 100%);
+:root {
+  --primary-color: #119EEA;
+  --primary-dark-color: #763CED;
+  --background-color: #F8F9FA; /* For elements, not body */
+  --text-color: var(--text-color-dark);
+  --text-color-dark: #333333; 
+  --text-color-on-dark: #FFFFFF; /* For text on dark backgrounds */
+  --success-color: #4CAF50; /* Changed to green */
+  --danger-color: #EF4444; /* Red color for danger actions */
+}
+body {                                                                                                                                         
+    font-family: 'Noto Sans Thai', system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;               
+        background: linear-gradient(to bottom right, var(--primary-color), var(--primary-dark-color));
+        color: var(--text-color-on-dark);}
+
+/* Set default text color for form elements */
+input, textarea, select {
+    color: var(--text-color-dark);
+}
+
+/* Optional: Style placeholder text for better visibility */
+input::placeholder, textarea::placeholder {
+    color: #9ca3af; /* A slightly lighter gray */
+    opacity: 1; /* Firefox applies a lower opacity by default */
 }

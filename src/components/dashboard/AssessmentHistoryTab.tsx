@@ -3,7 +3,11 @@ import { getAssessmentHistory, reauthenticate, clearAssessmentHistory } from '..
 import { useAppContext } from '../../App';
 import * as XLSX from 'xlsx';
 
-const AssessmentHistoryTab = () => {
+interface AssessmentHistoryTabProps {
+    userId: string | null;
+}
+
+const AssessmentHistoryTab: React.FC<AssessmentHistoryTabProps> = ({ userId }) => {
     const { user } = useAppContext();
     const [assessments, setAssessments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -12,7 +16,7 @@ const AssessmentHistoryTab = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            setAssessments(await getAssessmentHistory());
+            setAssessments(await getAssessmentHistory(userId));
         } catch (error) {
             console.error("Error fetching assessment history:", error);
         }
@@ -21,7 +25,7 @@ const AssessmentHistoryTab = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [userId]);
 
     const handleExport = () => {
         const worksheet = XLSX.utils.json_to_sheet(assessments.map(a => ({
@@ -75,7 +79,7 @@ const AssessmentHistoryTab = () => {
         <div className="tab-content">
             <div className="card rounded-2xl p-6 text-slate-900">
                 <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-                    <h3 className="text-lg font-semibold">ประวัติการประเมินมาตรฐาน</h3>
+                    <h3 className="text-lg font-semibold">ประวัติการประเมินมาตรฐาน{userId ? `ของฉัน` : `ทั้งหมด`}</h3>
                     <div className="flex items-center gap-2">
                         <div className="flex items-center">
                             <label htmlFor="date-filter" className="mr-2 text-sm font-medium text-gray-700">กรองตามวันที่:</label>

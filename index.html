@@ -2,14 +2,34 @@
 <html lang="th">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Yonchuw – ระบบจอง ยืม-คืน และซ่อมบำรุง</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
+    <title>ระบบจอง ยืม-คืน และซ่อมบำรุง</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: 'var(--primary-color)',
+              'primary-dark': 'var(--primary-dark-color)',
+              'text-color': 'var(--text-color)',
+              'text-color-dark': 'var(--text-color-dark)',
+              'card-bg': 'var(--card-bg-color)',
+              'border-color': 'var(--border-color)',
+              success: 'var(--success-color)',
+              danger: 'var(--danger-color)',
+              warning: 'var(--warning-color)',
+            }
+          }
+        }
+      }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="/index.css" />
+    <link rel="icon" type="image/x-icon" href="src/img/logo/Untitled.png" />
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { getEquipmentList } from '../api/firestoreApi';
+import { getEquipmentList, getEquipmentTypes } from '../api/firestoreApi';
 
 const EquipmentShowcase = () => {
     const [equipment, setEquipment] = useState<any[]>([]);
+    const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
 
-    const fetchEquipment = async () => {
+    const fetchEquipmentAndTypes = async () => {
         setLoading(true);
         try {
-            const list = await getEquipmentList({ q: searchQuery, f: statusFilter, t: typeFilter });
+            const [list, types] = await Promise.all([
+                getEquipmentList({ q: searchQuery, f: statusFilter, t: typeFilter }),
+                getEquipmentTypes()
+            ]);
             setEquipment(list);
+            setEquipmentTypes(types);
         } catch (error) {
             console.error("Error fetching equipment for showcase:", error);
         }
@@ -20,7 +25,7 @@ const EquipmentShowcase = () => {
     };
 
     useEffect(() => {
-        fetchEquipment();
+        fetchEquipmentAndTypes();
     }, [searchQuery, statusFilter, typeFilter]);
 
     return (
@@ -47,7 +52,9 @@ const EquipmentShowcase = () => {
                         </select>
                         <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-slate-200">
                             <option value="">ทุกประเภท</option>
-                            {/* You might want to fetch equipment types dynamically here */}
+                            {equipmentTypes.map(type => (
+                                <option key={type} value={type}>{type}</option>
+                            ))}
                         </select>
                     </div>
                     {/* The add equipment button is likely for admin, so it should be handled elsewhere or conditionally rendered */}
@@ -61,15 +68,15 @@ const EquipmentShowcase = () => {
                         <p>ไม่พบอุปกรณ์</p>
                     ) : (
                         equipment.map(e => (
-                            <div key={e.id} className="relative rounded-xl border p-4 bg-white border-slate-200 flex items-center gap-4">
-                                {e.typeImageUrl && (
-                                    <img src={e.typeImageUrl} alt={e.name} className="w-24 h-24 object-cover rounded-md" />
-                                )}
+                            <div key={e.id} className="relative rounded-xl border p-4 bg-white border-slate-200 flex items-center gap-4 flex-row-reverse">
                                 <div>
                                     <div className="font-semibold">{e.name}</div>
                                     <div className="text-sm text-slate-500">S/N: {e.serial}</div>
                                     <div className="text-xs text-slate-400 mt-1">{e.type}</div>
                                 </div>
+                                {e.typeImageUrl && (
+                                    <img src={e.typeImageUrl} alt={e.name} className="w-24 h-24 object-cover rounded-md" />
+                                )}
                             </div>
                         ))
                     )}

@@ -1,32 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { getActivityLog } from '../../api/firestoreApi';
 import { useAppContext } from '../../App';
+import LogDetailModal from './LogDetailModal';
 
 interface ApprovalHistoryTabProps {
-    userId: string; // This userId refers to the admin's UID
+    userId: string | null; // This userId refers to the admin's UID or null for all
 }
 
 const ApprovalHistoryTab: React.FC<ApprovalHistoryTabProps> = ({ userId }) => {
-    const { user } = useAppContext();
+    const { user, showModal } = useAppContext();
     const [activityLog, setActivityLog] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [dateFilter, setDateFilter] = useState(''); // New state for date filter
+    const [dateFilter, setDateFilter] = useState('');
+    const [actionTypeFilter, setActionTypeFilter] = useState('all'); // all, user, borrow, repair
+    const [actionResultFilter, setActionResultFilter] = useState('all'); // all, approved, rejected
 
     useEffect(() => {
         const fetchActivity = async () => {
-            if (!userId) return;
             setLoading(true);
             try {
-                // Fetch activity logs for the current admin, filtering for approval-related actions
                 const logs = await getActivityLog(dateFilter, user?.role === 'admin', userId);
-                const approvalLogs = logs.filter(log => 
-                    log.action === 'APPROVE_BORROW' || 
-                    log.action === 'REJECT_BORROW' ||
-                    log.action === 'APPROVE_REPAIR' ||
-                    log.action === 'REJECT_REPAIR' ||
-                    log.action === 'APPROVE_USER' ||
-                    log.action === 'REJECT_USER'
+                let approvalLogs = logs.filter(log => 
+                    log.action.includes('APPROVE') || log.action.includes('REJECT')
                 );
+
+                // Filter by Action Type
+                if (actionTypeFilter !== 'all') {
+                    approvalLogs = approvalLogs.filter(log => log.action.toLowerCase().includes(actionTypeFilter));
+                }
+
+                // Filter by Action Result
+                if (actionResultFilter !== 'all') {
+                    if (actionResultFilter === 'approved') {
+                        approvalLogs = approvalLogs.filter(log => log.action.startsWith('APPROVE'));
+                    } else if (actionResultFilter === 'rejected') {
+                        approvalLogs = approvalLogs.filter(log => log.action.startsWith('REJECT'));
+                    }
+                }
+
                 setActivityLog(approvalLogs);
             } catch (error) {
                 console.error("Error fetching approval activity log:", error);
@@ -34,7 +45,11 @@ const ApprovalHistoryTab: React.FC<ApprovalHistoryTabProps> = ({ userId }) => {
             setLoading(false);
         };
         fetchActivity();
-    }, [userId, user?.role, dateFilter]); // Add dateFilter to dependencies
+    }, [userId, user?.role, dateFilter, actionTypeFilter, actionResultFilter]);
+
+    const showDetails = (log: any) => {
+        showModal('รายละเอียดการกระทำ', <LogDetailModal log={log} key={log.id} />);
+    };
 
     if (loading) {
         return <p>Loading approval history...</p>;
@@ -42,45 +57,58 @@ const ApprovalHistoryTab: React.FC<ApprovalHistoryTabProps> = ({ userId }) => {
 
     return (
         <div className="tab-content">
-            <div className="card rounded-2xl p-6 text-slate-900">
-                <h3 className="text-lg font-semibold">ประวัติการอนุมัติของฉัน</h3>
-                <div className="mb-4">
-                    <label htmlFor="approval-history-date" className="mr-2 text-sm font-medium text-gray-700">เลือกวันที่:</label>
-                    <input 
-                        type="date" 
-                        id="approval-history-date" 
-                        value={dateFilter} 
-                        onChange={e => setDateFilter(e.target.value)} 
-                        className="px-3 py-2 rounded-lg border border-slate-200 text-sm"
-                    />
+            <div className="bg-white rounded-2xl p-6 text-[var(--text-color-dark)]">
+                <h3 className="text-lg font-semibold">ประวัติการอนุมัติ{userId ? `ของฉัน` : `ทั้งหมด`}</h3>
+                <div className="flex flex-wrap items-center gap-4 mb-4">
+                    <div>
+                        <label htmlFor="approval-history-date" className="text-sm font-medium text-gray-700">เลือกวันที่:</label>
+                        <input 
+                            type="date" 
+                            id="approval-history-date" 
+                            value={dateFilter} 
+                            onChange={e => setDateFilter(e.target.value)} 
+                            className="ml-2 px-3 py-2 rounded-lg border border-[var(--border-color)] text-sm bg-gray-50"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="action-type-filter" className="text-sm font-medium text-gray-700">ประเภท:</label>
+                        <select 
+                            id="action-type-filter"
+                            value={actionTypeFilter}
+                            onChange={e => setActionTypeFilter(e.target.value)}
+                            className="ml-2 px-3 py-2 rounded-lg border border-[var(--border-color)] text-sm bg-gray-50"
+                        >
+                            <option value="all">ทั้งหมด</option>
+                            <option value="user">อนุมัติบัญชี</option>
+                            <option value="borrow">อนุมัติการยืม</option>
+                            <option value="repair">อนุมัติการซ่อม</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="action-result-filter" className="text-sm font-medium text-gray-700">ผลลัพธ์:</label>
+                        <select 
+                            id="action-result-filter"
+                            value={actionResultFilter}
+                            onChange={e => setActionResultFilter(e.target.value)}
+                            className="ml-2 px-3 py-2 rounded-lg border border-[var(--border-color)] text-sm bg-gray-50"
+                        >
+                            <option value="all">ทั้งหมด</option>
+                            <option value="approved">อนุมัติ</option>
+                            <option value="rejected">ไม่อนุมัติ</option>
+                        </select>
+                    </div>
                 </div>
                 <div className="mt-4 space-y-3 max-h-[60vh] overflow-y-auto pr-2 -mr-2">
                     {activityLog.length === 0 ? (
-                        <p className="text-slate-500">ไม่มีประวัติการอนุมัติ</p>
+                        <p className="text-gray-500">ไม่พบประวัติการอนุมัติตามเงื่อนไขที่เลือก</p>
                     ) : (
                         activityLog.map(log => (
-                            <div key={log.id} className="p-3 rounded-lg border border-slate-200 text-sm">
-                                <p className="font-semibold">{log.action.replace(/_/g, ' ')}</p>
-                                <p className="text-slate-600">โดย: {log.adminName} เมื่อ: {new Date(log.timestamp?.toDate()).toLocaleString()}</p>
-                                {log.details && (
-                                    <div className="text-xs text-slate-500 mt-1">
-                                        {log.details.borrowId && <p>Borrow ID: {log.details.borrowId.substring(0, 6)}...</p>}
-                                        {log.details.userId && <p>User ID: {log.details.userId.substring(0, 6)}...</p>}
-                                        {log.details.equipmentRequests && (
-                                            <div>
-                                                <p>Equipment:</p>
-                                                <ul className="list-disc pl-4">
-                                                    {log.details.equipmentRequests.map((req, index) => (
-                                                        <li key={index}>{req.type} (จำนวน: {req.quantity})</li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-                                        {log.details.equipmentId && <p>Equipment ID: {log.details.equipmentId.substring(0, 6)}...</p>}
-                                        {log.details.equipmentName && <p>Equipment Name: {log.details.equipmentName}</p>}
-                                        {log.details.reason && <p>Reason: {log.details.reason}</p>}
-                                    </div>
-                                )}
+                            <div key={log.id} className="p-3 rounded-lg border border-[var(--border-color)] text-sm">
+                                <div className="flex justify-between items-start">
+                                    <p className={`font-semibold ${log.action.startsWith('APPROVE') ? 'text-green-600' : 'text-red-600'}`}>{log.action.replace(/_/g, ' ')}</p>
+                                    <button onClick={() => showDetails(log)} className="text-xs text-[var(--primary-color)] hover:underline">ดูรายละเอียด</button>
+                                </div>
+                                <p className="text-gray-600">โดย: {log.adminName} เมื่อ: {new Date(log.timestamp?.toDate()).toLocaleString()}</p>
                             </div>
                         ))
                     )}

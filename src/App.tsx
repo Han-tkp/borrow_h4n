@@ -1,5 +1,5 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { auth } from './api/firebase';
 import { getUserProfile, createUserProfile } from './api/firestoreApi';
 import Header from './components/Header';
@@ -22,6 +22,25 @@ const App = () => {
     const [modalContent, setModalContent] = useState<React.ReactNode>(null);
     const [modalTitle, setModalTitle] = useState('');
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const showToast = (type: 'Success' | 'Error', message: string) => {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
+
+        toast.textContent = message;
+        toast.classList.remove('hidden', 'bg-green-500', 'bg-red-500');
+
+        if (type === 'Success') {
+            toast.classList.add('bg-green-500');
+        } else {
+            toast.classList.add('bg-red-500');
+        }
+
+        setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 3000);
+    };
 
     const showModal = (title: string, content: React.ReactNode) => {
         setModalTitle(title);
@@ -94,8 +113,8 @@ const App = () => {
     }
 
     return (
-        <AppContext.Provider value={{ user, handleLogout, showModal, hideModal }}>
-            <div className="min-h-screen bg-grad text-white transition-all duration-300">
+        <AppContext.Provider value={{ user, handleLogout, showModal, hideModal, showToast }}>
+            <div className="min-h-screen transition-all duration-300">
                 <Header />
                 <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <Routes>
@@ -111,7 +130,7 @@ const App = () => {
                     {modalContent}
                 </Modal>
                 <Toast />
-                <Footer />
+                {location.pathname === '/' && <Footer />}
             </div>
         </AppContext.Provider>
     );

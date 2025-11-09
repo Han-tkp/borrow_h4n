@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getAllUsers, updateUser, deleteUser, getActivityLog, reauthenticate, clearActivityLog } from '../../api/firestoreApi';
+import { getAllUsers, updateUser, deleteUser, recoverUser, getActivityLog, reauthenticate, clearActivityLog, clearAssessmentHistory, clearBorrowHistory, clearRepairHistory, deleteAllUsersExceptAdmin, clearEquipmentData, clearEquipmentTypes, clearStandardAssessments, clearAllStorage } from '../../api/firestoreApi';
 import { roleMap } from '../../utils/helpers';
 import { useAppContext } from '../../App';
 import LogDetailModal from './LogDetailModal';
 import UserForm from './UserForm';
 import * as XLSX from 'xlsx';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
+import UserDetailModal from './UserDetailModal';
 
 const AdminTab = () => {
             const { showModal, hideModal, user } = useAppContext();
@@ -18,8 +19,8 @@ const AdminTab = () => {
             const [statusFilter, setStatusFilter] = useState('');
             const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
             const [selectedAdminToViewLogs, setSelectedAdminToViewLogs] = useState<string>(''); // Re-implement state for filtering logs
-        
-        
+
+
             const [historyDateFilter, setHistoryDateFilter] = useState('');
         
             const fetchData = async () => {
@@ -27,7 +28,7 @@ const AdminTab = () => {
                 try {
                     const [userList, logList] = await Promise.all([
                         getAllUsers(), 
-                        getActivityLog(historyDateFilter, user?.isMainAccount, user?.uid, selectedAdminToViewLogs) // Pass selectedAdminToViewLogs again
+                        getActivityLog(historyDateFilter, user?.isMainAccount, selectedAdminToViewLogs) // Pass selectedAdminToViewLogs as adminIdToFilter
                     ]);
                     setUsers(userList);
                     setActivityLog(logList);
@@ -62,7 +63,7 @@ const AdminTab = () => {
                                 await deleteUser(uid, reason);
                                 fetchData();
                                 hideModal();
-                                alert('ลบผู้ใช้และบันทึกเหตุผลเรียบร้อย');
+                                alert('ปิดใช้งานผู้ใช้และบันทึกเหตุผลเรียบร้อย');
                             } catch (error) {
                                 console.error("Failed to delete user:", error);
                                 alert('เกิดข้อผิดพลาดในการลบผู้ใช้');
@@ -82,7 +83,7 @@ const AdminTab = () => {
                                 fetchData();
                                 setSelectedUsers([]);
                                 hideModal();
-                                alert('ลบผู้ใช้ที่เลือกและบันทึกเหตุผลเรียบร้อย');
+                                alert('ปิดใช้งานผู้ใช้ที่เลือกและบันทึกเหตุผลเรียบร้อย');
                             } catch (error) {
                                 console.error("Failed to delete selected users:", error);
                                 alert('เกิดข้อผิดพลาดในการลบผู้ใช้ที่เลือก');
@@ -92,6 +93,18 @@ const AdminTab = () => {
                 );
             };
         
+            const handleRecoverUser = async (uid: string) => {
+                if (!window.confirm('คุณแน่ใจหรือไม่ว่าต้องการกู้คืนบัญชีผู้ใช้นี้?')) return;
+                try {
+                    await recoverUser(uid);
+                    fetchData();
+                    alert('กู้คืนบัญชีผู้ใช้เรียบร้อย');
+                } catch (error) {
+                    console.error("Failed to recover user:", error);
+                    alert('เกิดข้อผิดพลาดในการกู้คืนบัญชีผู้ใช้');
+                }
+            };
+
             const handleSelectUser = (uid: string) => {
                 setSelectedUsers(prev =>
                     prev.includes(uid) ? prev.filter(id => id !== uid) : [...prev, uid]
@@ -113,6 +126,10 @@ const AdminTab = () => {
             const handleEditUser = (user: any) => {
                 showModal('แก้ไขข้อมูลผู้ใช้', <UserForm user={user} users={users} onSuccess={() => { fetchData(); hideModal(); }} />);
             };
+
+            const handleViewUser = (user: any) => {
+                showModal('รายละเอียดผู้ใช้', <UserDetailModal userId={user.id} onClose={hideModal} />);
+            };
         
             const showDetailsModal = (logEntry: any) => {
                 showModal('รายละเอียดการกระทำ', <LogDetailModal log={logEntry} key={logEntry.id} />);
@@ -120,7 +137,7 @@ const AdminTab = () => {
         
             const filteredUsers = users.filter(user => {
                 const searchLower = search.toLowerCase();
-                const statusMatch = statusFilter === '' ? user.status !== 'deleted' : user.status === statusFilter;
+                const statusMatch = statusFilter === '' ? user.status !== 'deleted' && user.status !== 'pending_approval' : user.status === statusFilter;
                 return (
                     (roleFilter === '' || user.role === roleFilter) &&
                     statusMatch &&
@@ -142,8 +159,10 @@ const AdminTab = () => {
                 XLSX.writeFile(workbook, "activity_log.xlsx");
             };
         
-            const handleClearHistory = async () => {
-                const password = prompt("โปรดยืนยันรหัสผ่านของคุณเพื่อล้างประวัติ:");
+
+
+            const handleClearAllData = async () => {
+                const password = prompt("โปรดยืนยันรหัสผ่านของคุณเพื่อล้างข้อมูลทั้งหมด:");
                 if (!password) return;
         
                 try {
@@ -153,14 +172,24 @@ const AdminTab = () => {
                     return;
                 }
         
-                if (window.confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างประวัติการทำงานทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้")) {
+                if (window.confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลทั้งหมดในระบบ (ประวัติทั้งหมดและผู้ใช้ทั้งหมด ยกเว้นบัญชี Admin ปัจจุบัน)? การกระทำนี้ไม่สามารถย้อนกลับได้")) {
                     try {
-                        await clearActivityLog();
-                        alert("ล้างประวัติการทำงานทั้งหมดเรียบร้อยแล้ว");
+                        await Promise.all([
+                            clearActivityLog(),
+                            clearAssessmentHistory(),
+                            clearBorrowHistory(),
+                            clearRepairHistory(),
+                            clearEquipmentData(),
+                            clearEquipmentTypes(),
+                            clearStandardAssessments(),
+                            clearAllStorage(), // Clear Firebase Storage
+                            deleteAllUsersExceptAdmin(user.uid) // Delete all users except the current admin
+                        ]);
+                        alert("ล้างข้อมูลทั้งหมดเรียบร้อยแล้ว (ยกเว้นบัญชี Admin)");
                         fetchData(); // Refresh the data
                     } catch (error) {
-                        console.error("Error clearing activity log:", error);
-                        alert("เกิดข้อผิดพลาดในการล้างประวัติ");
+                        console.error("Error clearing all data:", error);
+                        alert("เกิดข้อผิดพลาดในการล้างข้อมูลทั้งหมด");
                     }
                 }
             };
@@ -169,30 +198,29 @@ const AdminTab = () => {
                 <div>
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                         <div className="flex items-center gap-2 flex-wrap">
-                            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="ค้นหาชื่อหรืออีเมล" className="px-3 py-2 rounded-lg border border-slate-200 text-sm" />
-                            <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-slate-200 text-sm">
+                            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="ค้นหาชื่อหรืออีเมล" className="px-3 py-2 rounded-lg border border-[var(--border-color)] text-sm" />
+                            <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--border-color)] text-sm">
                                 <option value="">ทุกบทบาท</option>
                                 {Object.entries(roleMap).map(([key, value]) => <option key={key} value={key}>{value}</option>)}
                             </select>
-                            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-slate-200 text-sm">
+                            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--border-color)] text-sm">
                                 <option value="">ทุกสถานะ</option>
                                 <option value="active">ใช้งาน</option>
-                                <option value="pending_approval">รออนุมัติ</option>
                                 <option value="deleted">ถูกลบ</option>
                             </select>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button onClick={handleAddUser} className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm">เพิ่มผู้ใช้ใหม่</button>
-                            <button onClick={handleDeleteSelected} disabled={selectedUsers.length === 0} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm disabled:opacity-50">ลบรายการที่เลือก</button>
+                            <button onClick={handleAddUser} className="px-4 py-2 rounded-lg bg-[var(--primary-color)] text-white hover:opacity-90 text-sm">เพิ่มผู้ใช้ใหม่</button>
+                            <button onClick={handleDeleteSelected} disabled={selectedUsers.length === 0} className="px-4 py-2 rounded-lg bg-[var(--danger-color)] text-white hover:opacity-80 text-sm disabled:opacity-50">ปิดใช้งานรายการที่เลือก</button>
                         </div>
                     </div>
                     <div className="overflow-y-auto max-h-[60vh] pr-2 -mr-2">
-                        <table className="w-full text-sm text-left text-slate-500">
-                            <thead className="text-xs text-slate-700 uppercase bg-slate-50">
+                        <table className="w-full text-sm text-left text-gray-500">
+                            <thead className="text-xs text-gray-600 uppercase bg-gray-50">
                                 <tr>
                                     <th scope="col" className="p-4">
                                         <div className="flex items-center">
-                                            <input id="checkbox-all-search" type="checkbox" onChange={handleSelectAll} checked={selectedUsers.length > 0 && selectedUsers.length === filteredUsers.length} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" />
+                                            <input id="checkbox-all-search" type="checkbox" onChange={handleSelectAll} checked={selectedUsers.length > 0 && selectedUsers.length === filteredUsers.length} className="w-4 h-4 text-[var(--primary-color)] bg-gray-100 border-[var(--border-color)] rounded focus:ring-[var(--primary-color)]" />
                                             <label htmlFor="checkbox-all-search" className="sr-only">checkbox</label>
                                         </div>
                                     </th>
@@ -208,25 +236,30 @@ const AdminTab = () => {
                                     <tr key={user.id} className="bg-white border-b hover:bg-gray-50">
                                         <td className="w-4 p-4">
                                             <div className="flex items-center">
-                                                <input id={`checkbox-table-search-${user.id}`} type="checkbox" onChange={() => handleSelectUser(user.id)} checked={selectedUsers.includes(user.id)} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" />
+                                                <input id={`checkbox-table-search-${user.id}`} type="checkbox" onChange={() => handleSelectUser(user.id)} checked={selectedUsers.includes(user.id)} className="w-4 h-4 text-[var(--primary-color)] bg-gray-100 border-[var(--border-color)] rounded focus:ring-[var(--primary-color)]" />
                                                 <label htmlFor={`checkbox-table-search-${user.id}`} className="sr-only">checkbox</label>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-2 font-medium text-slate-900">{user.name}</td>
+                                        <td className="px-4 py-2 font-medium text-[var(--text-color-dark)]">{user.name}</td>
                                         <td className="px-4 py-2">
-                                            <select value={user.role} onChange={e => handleRoleChange(user.id, e.target.value)} className="p-1 rounded-md border-slate-300 text-xs">
+                                            <select value={user.role} onChange={e => handleRoleChange(user.id, e.target.value)} className="p-1 rounded-md border-[var(--border-color)] text-xs">
                                                 {Object.entries(roleMap).map(([key, value]) => <option key={key} value={key}>{value}</option>)}
                                             </select>
                                         </td>
                                         <td className="px-4 py-2">
-                                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${user.status === 'active' ? 'bg-green-100 text-green-800' : user.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800' : 'bg-slate-200 text-slate-600'}`}>
-                                                {user.status}
+                                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${user.status === 'active' ? 'bg-green-100 text-green-800' : user.status === 'deleted' ? 'bg-gray-200 text-gray-600' : ''}`}>
+                                                {user.status === 'deleted' ? 'ถูกลบ' : user.status === 'active' ? 'ใช้งาน' : ''}
                                             </span>
                                         </td>
                                         <td className="px-4 py-2">{user.email}</td>
                                         <td className="px-4 py-2">
-                                           <button onClick={() => handleEditUser(user)} className="text-xs text-indigo-600 hover:underline">แก้ไข</button>
-                                           <button onClick={() => handleDeleteUser(user.id)} className="text-xs text-red-600 hover:underline ml-2">ลบ</button>
+                                           <button onClick={() => handleViewUser(user)} className="text-xs text-blue-600 hover:underline">ดูรายละเอียด</button>
+                                           <button onClick={() => handleEditUser(user)} className="text-xs text-[var(--primary-color)] hover:underline ml-2">แก้ไข</button>
+                                           {user.status !== 'deleted' ? (
+                                                <button onClick={() => handleDeleteUser(user.id)} className="text-xs text-[var(--danger-color)] hover:underline ml-2">ปิดใช้งาน</button>
+                                           ) : (
+                                                <button onClick={() => handleRecoverUser(user.id)} className="text-xs text-[var(--success-color)] hover:underline ml-2">กู้คืน</button>
+                                           )}
                                         </td>
                                     </tr>
                                 ))}
@@ -236,6 +269,39 @@ const AdminTab = () => {
                 </div>
             );
         
+            const actionMap = {
+                'DELETE_EQUIPMENT': 'ลบอุปกรณ์',
+                'BATCH_DELETE_EQUIPMENT': 'ลบอุปกรณ์หลายรายการ',
+                'ADD_EQUIPMENT': 'เพิ่มอุปกรณ์',
+                'BATCH_UPDATE_STATUS': 'อัปเดตสถานะหลายรายการ',
+                'IMPORT_EQUIPMENT': 'นำเข้าข้อมูลอุปกรณ์',
+                'CREATE_USER': 'เพิ่มผู้ใช้',
+                'DELETE_USER': 'ลบผู้ใช้',
+                'UPDATE_USER': 'แก้ไขข้อมูลผู้ใช้',
+                'CREATE_BORROW_REQUEST': 'สร้างคำขอยืม',
+                'APPROVE_BORROW': 'อนุมัติคำขอยืม',
+                'REJECT_BORROW': 'ปฏิเสธคำขอยืม',
+                'APPROVE_REPAIR': 'อนุมัติการซ่อม',
+                'REJECT_REPAIR': 'ปฏิเสธการซ่อม',
+                'APPROVE_AND_AUTO_ASSIGN_BORROW': 'อนุมัติและจ่ายเครื่อง',
+                'PROCESS_RETURN': 'รับคืนเครื่อง',
+                'CONFIRM_DELIVERY': 'ยืนยันการส่งมอบ',
+                'COMPLETE_REPAIR': 'ซ่อมเสร็จสิ้น',
+                'CHANGE_EQUIPMENT_AND_DELIVER': 'เปลี่ยนเครื่องและส่งมอบ',
+                'POST_ASSESSMENT': 'ตรวจสภาพหลังคืน',
+                'CREATE_REPAIR_REQUEST_FROM_ASSESSMENT': 'สร้างคำขอซ่อม (หลังตรวจ)',
+                'CLEAR_ACTIVITY_LOG': 'ล้างประวัติการทำงาน',
+                'CLEAR_ASSESSMENT_HISTORY': 'ล้างประวัติการประเมิน',
+                'CLEAR_BORROW_HISTORY': 'ล้างประวัติการยืม',
+                'CLEAR_REPAIR_HISTORY': 'ล้างประวัติการซ่อม',
+                'CLEAR_EQUIPMENT_DATA': 'ล้างข้อมูลอุปกรณ์',
+                'CLEAR_EQUIPMENT_TYPES': 'ล้างข้อมูลประเภทอุปกรณ์',
+                'CLEAR_STANDARD_ASSESSMENTS': 'ล้างประวัติการประเมินมาตรฐาน',
+                'DELETE_ALL_USERS_EXCEPT_ADMIN': 'ล้างข้อมูลผู้ใช้ทั้งหมด',
+                'RECOVER_USER': 'กู้คืนบัญชีผู้ใช้',
+                'STANDARD_ASSESSMENT': 'ตรวจเช็คมาตรฐาน'
+            };
+
             const renderHistoryLog = () => (
                 <div>
                     <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
@@ -245,11 +311,10 @@ const AdminTab = () => {
                                 type="date" 
                                 id="history-date" 
                                 value={historyDateFilter} 
-                                onChange={e => setHistoryDateFilter(e.target.value)} 
-                                className="px-3 py-2 rounded-lg border border-slate-200 text-sm"
-                            />
+                                onChange={e => setHistoryDateFilter(e.target.value)}
+                                className="px-3 py-2 rounded-lg border border-[var(--border-color)] text-sm"                            />
                         </div>
-                        {user?.isMainAccount && (
+                        {user?.role === 'admin' && (
                             <div className="flex items-center">
                                 <label htmlFor="filter-admin" className="mr-2 text-sm font-medium text-gray-700">กรองตามผู้ดูแล:</label>
                                 <select
@@ -266,13 +331,12 @@ const AdminTab = () => {
                             </div>
                         )}
                         <div className="flex items-center gap-2">
-                            <button onClick={handleExport} className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 text-sm">Export to Excel</button>
-                            <button onClick={handleClearHistory} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm">Clear History</button>
+                            <button onClick={handleClearAllData} className="px-4 py-2 rounded-lg bg-red-700 text-white hover:opacity-90 text-sm">ล้างทั้งระบบ (ลบข้อมูลทั้งหมด ยกเว้นบัญชี Admin)</button>
                         </div>
                     </div>
                     <div className="overflow-y-auto max-h-[70vh]">
-                        <table className="w-full text-sm text-left text-slate-500">
-                            <thead className="text-xs text-slate-700 uppercase bg-slate-50 sticky top-0">
+                        <table className="w-full text-sm text-left text-gray-500">
+                            <thead className="text-xs text-gray-600 uppercase bg-gray-50 sticky top-0">
                                 <tr>
                                     <th scope="col" className="px-4 py-3">เวลา</th>
                                     <th scope="col" className="px-4 py-3">ผู้ดำเนินการ</th>
@@ -283,13 +347,17 @@ const AdminTab = () => {
                             <tbody>
                                 {activityLog.map(logEntry => (
                                     <tr key={logEntry.id} className="bg-white border-b">
-                                        <td className="px-4 py-2 text-xs text-slate-500">{logEntry.timestamp?.toDate().toLocaleString() || 'N/A'}</td>
-                                        <td className="px-4 py-2 font-medium text-slate-900">{logEntry.adminName}</td>
+                                        <td className="px-4 py-2 text-xs text-gray-500">{logEntry.timestamp?.toDate().toLocaleString() || 'N/A'}</td>
+                                        <td className="px-4 py-2 font-medium text-[var(--text-color-dark)]">{logEntry.adminName}</td>
                                         <td className="px-4 py-2">
-                                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-800">{logEntry.action}</span>
+                                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                                                {actionMap[logEntry.action] || logEntry.action}
+                                            </span>
                                         </td>
                                         <td className="px-4 py-2">
-                                            <button onClick={() => showDetailsModal(logEntry)} className="font-medium text-blue-600 hover:underline">ดูรายละเอียด</button>
+                                            {['CREATE_USER', 'DELETE_USER', 'UPDATE_USER', 'ADD_EQUIPMENT', 'DELETE_EQUIPMENT', 'BATCH_DELETE_EQUIPMENT', 'IMPORT_EQUIPMENT', 'BATCH_UPDATE_STATUS', 'CREATE_BORROW_REQUEST', 'APPROVE_BORROW', 'REJECT_BORROW', 'APPROVE_REPAIR', 'REJECT_REPAIR', 'APPROVE_AND_AUTO_ASSIGN_BORROW', 'PROCESS_RETURN', 'CONFIRM_DELIVERY', 'COMPLETE_REPAIR', 'CHANGE_EQUIPMENT_AND_DELIVER', 'POST_ASSESSMENT', 'CREATE_REPAIR_REQUEST_FROM_ASSESSMENT'].includes(logEntry.action) && (
+                                                <button onClick={() => showDetailsModal(logEntry)} className="font-medium text-[var(--primary-color)] hover:underline">ดูรายละเอียด</button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -303,22 +371,22 @@ const AdminTab = () => {
         
             return (
                 <div className="tab-content">
-                    <div className="card rounded-2xl p-6 text-slate-900">
+                    <div className="bg-white rounded-2xl p-6 text-[var(--text-color-dark)]">
                         <div className="flex border-b mb-4">
                             {user?.role === 'admin' && (
-                                <button onClick={() => setActiveSubTab('users')} className={`px-4 py-2 font-semibold ${activeSubTab === 'users' ? 'border-b-2 border-indigo-500' : 'text-slate-500'}`}>จัดการผู้ใช้</button>
+                                <button onClick={() => setActiveSubTab('users')} className={`px-4 py-2 font-semibold ${activeSubTab === 'users' ? 'bg-[var(--primary-color)] text-white rounded-t-lg' : 'text-gray-600 hover:bg-gray-100 rounded-t-lg'}`}>จัดการผู้ใช้</button>
                             )}
                             {user?.role === 'admin' && (
-                                <button onClick={() => setActiveSubTab('history')} className={`px-4 py-2 font-semibold ${activeSubTab === 'history' ? 'border-b-2 border-indigo-500' : 'text-slate-500'}`}>ประวัติการทำงาน</button>
+                                <button onClick={() => setActiveSubTab('history')} className={`px-4 py-2 font-semibold ${activeSubTab === 'history' ? 'bg-[var(--primary-color)] text-white rounded-t-lg' : 'text-gray-600 hover:bg-gray-100 rounded-t-lg'}`}>ประวัติการทำงาน</button>
                             )}
                             {user?.role === 'technician' && (
-                                <button onClick={() => setActiveSubTab('repairHistory')} className={`px-4 py-2 font-semibold ${activeSubTab === 'repairHistory' ? 'border-b-2 border-indigo-500' : 'text-slate-500'}`}>ประวัติการซ่อม</button>
+                                <button onClick={() => setActiveSubTab('repairHistory')} className={`px-4 py-2 font-semibold ${activeSubTab === 'repairHistory' ? 'bg-[var(--primary-color)] text-white rounded-t-lg' : 'text-gray-600 hover:bg-gray-100 rounded-t-lg'}`}>ประวัติการซ่อม</button>
                             )}
                             {user?.role === 'approver' && (
-                                <button onClick={() => setActiveSubTab('approvalHistory')} className={`px-4 py-2 font-semibold ${activeSubTab === 'approvalHistory' ? 'border-b-2 border-indigo-500' : 'text-slate-500'}`}>ประวัติการอนุมัติ</button>
+                                <button onClick={() => setActiveSubTab('approvalHistory')} className={`px-4 py-2 font-semibold ${activeSubTab === 'approvalHistory' ? 'bg-[var(--primary-color)] text-white rounded-t-lg' : 'text-gray-600 hover:bg-gray-100 rounded-t-lg'}`}>ประวัติการอนุมัติ</button>
                             )}
                             {user?.role === 'user' && (
-                                <button onClick={() => setActiveSubTab('borrowHistory')} className={`px-4 py-2 font-semibold ${activeSubTab === 'borrowHistory' ? 'border-b-2 border-indigo-500' : 'text-slate-500'}`}>ประวัติการยืม</button>
+                                <button onClick={() => setActiveSubTab('borrowHistory')} className={`px-4 py-2 font-semibold ${activeSubTab === 'borrowHistory' ? 'bg-[var(--primary-color)] text-white rounded-t-lg' : 'text-gray-600 hover:bg-gray-100 rounded-t-lg'}`}>ประวัติการยืม</button>
                             )}
                         </div>
                         {activeSubTab === 'users' && user?.role === 'admin' && renderUserManagement()}

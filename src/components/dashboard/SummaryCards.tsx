@@ -41,31 +41,31 @@ const SummaryCards = () => {
 
     return (
         <div className="space-y-4">
-            <div className="bg-white p-4 rounded-xl border border-slate-200">
-                <p className="text-sm text-slate-500">สถานะอุปกรณ์: <span className="font-semibold text-indigo-600">{statusMap[displayStatus]?.text || displayStatus}</span></p>
+            <div className="bg-white p-4 rounded-xl border border-[var(--border-color)] shadow-sm">
+                <p className="text-sm text-gray-700">สถานะอุปกรณ์: <span className="font-semibold text-[var(--primary-color)]">{statusMap[displayStatus]?.text || displayStatus}</span></p>
                 {loading ? (
-                    <div className="h-12 w-24 bg-slate-200 animate-pulse rounded-md mt-1"></div>
+                    <div className="h-12 w-24 bg-gray-200 animate-pulse rounded-md mt-1"></div>
                 ) : (
-                    <p className="text-4xl font-bold text-slate-900">{stats.statusCounts[displayStatus] || 0}</p>
+                    <p className="text-4xl font-bold text-[var(--text-color-dark)]">{stats.statusCounts[displayStatus] || 0}</p>
                 )}
                 <div className="mt-2 flex flex-wrap gap-2">
                     {statusesToShow.map(status => (
                         <button 
                             key={status}
                             onClick={() => setDisplayStatus(status)}
-                            className={`text-xs px-2 py-1 rounded-full ${displayStatus === status ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                            className={`text-xs px-2 py-1 rounded-full ${displayStatus === status ? 'bg-[var(--primary-color)] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                             {statusMap[status]?.text || status}
                         </button>
                     ))}
                 </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-slate-200">
-                <p className="text-sm text-slate-500">ผู้ใช้ในระบบทั้งหมด</p>
+            <div className="bg-white p-4 rounded-xl border border-[var(--border-color)] shadow-sm">
+                <p className="text-sm text-gray-700">ผู้ใช้ในระบบทั้งหมด</p>
                 {loading ? (
-                    <div className="h-8 w-16 bg-slate-200 animate-pulse rounded-md mt-1"></div>
+                    <div className="h-8 w-16 bg-gray-200 animate-pulse rounded-md mt-1"></div>
                 ) : (
-                    <p className="text-2xl font-bold text-slate-900">{stats.userCount}</p>
+                    <p className="text-2xl font-bold text-[var(--text-color-dark)]">{stats.userCount}</p>
                 )}
             </div>
         </div>

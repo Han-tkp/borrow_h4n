@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { importEquipment } from '../api/firestoreApi';
 import catImage from '../img/cat.jpeg';
+import { importEquipment } from '../api/firestoreApi'; // Import importEquipment
 
 // Helper function to get row values with case-insensitive and trimmed keys
 const getRowValue = (row, keyMap) => {
@@ -39,11 +39,7 @@ const ImportModal = ({ onSuccess, onClose }) => {
             let parseError = false;
 
             try {
-                if (fileType === 'json') {
-                    const parsed = JSON.parse(fileData as string);
-                    if (Array.isArray(parsed)) importedData = parsed;
-                    else parseError = true;
-                } else if (fileType === 'csv') {
+                if (fileType === 'csv') {
                     const text = fileData as string;
                     const lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
                     const dataLines = lines[0].toLowerCase().includes('name,serial') ? lines.slice(1) : lines;
@@ -97,17 +93,6 @@ const ImportModal = ({ onSuccess, onClose }) => {
     };
 
     const csvExample = `เครื่องพ่น ULV,SN-123,เครื่องพ่น,ศตม.,5000,หมายเหตุ,available`;
-    const jsonExample = [
-      {
-        "name": "เครื่องพ่น ULV",
-        "serial": "SN-123",
-        "type": "เครื่องพ่น",
-        "department": "ศตม.",
-        "price": 5000,
-        "notes": "หมายเหตุ",
-        "status": "available"
-      }
-    ];
 
     return (
         <div>
@@ -116,9 +101,6 @@ const ImportModal = ({ onSuccess, onClose }) => {
                 <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                     <button onClick={() => setActiveTab('csv')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'csv' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
                         CSV
-                    </button>
-                    <button onClick={() => setActiveTab('json')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'json' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
-                        JSON
                     </button>
                     <button onClick={() => setActiveTab('excel')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'excel' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
                         Excel
@@ -138,16 +120,6 @@ const ImportModal = ({ onSuccess, onClose }) => {
                         <button onClick={() => handleFileSelectClick('csv')} className="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">เลือกไฟล์ .csv</button>
                     </div>
                 )}
-                {activeTab === 'json' && (
-                     <div className="space-y-4">
-                        <h4 className="font-semibold">รูปแบบไฟล์ JSON</h4>
-                        <p className="text-sm text-gray-600">ไฟล์ JSON ต้องเป็น Array ของ Object ที่มี key ตามตัวอย่าง:</p>
-                        <h5 className="font-semibold text-sm">ตัวอย่าง:</h5>
-                        <pre className="text-xs bg-gray-100 p-3 rounded">{JSON.stringify(jsonExample, null, 2)}</pre>
-                        <img src={catImage} alt="Example Placeholder" className="w-32 h-32 object-cover rounded-lg"/>
-                        <button onClick={() => handleFileSelectClick('json')} className="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">เลือกไฟล์ .json</button>
-                    </div>
-                )}
                 {activeTab === 'excel' && (
                      <div className="space-y-4">
                         <h4 className="font-semibold">รูปแบบไฟล์ Excel</h4>
@@ -158,8 +130,9 @@ const ImportModal = ({ onSuccess, onClose }) => {
                     </div>
                 )}
             </div>
-        </div>
+        </div>  
     );
 };
 
 export default ImportModal;
+

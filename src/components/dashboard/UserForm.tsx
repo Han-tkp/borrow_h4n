@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { registerWithEmail, updateUser } from '../../api/firestoreApi';
 import { roleMap } from '../../utils/helpers';
@@ -11,6 +10,9 @@ const UserForm = ({ user, users, onSuccess }) => {
     const [email, setEmail] = useState(user ? user.email : '');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState(user ? user.role : 'user');
+    const [agency, setAgency] = useState(user ? user.agency : '');
+    const [address, setAddress] = useState(user ? user.address : '');
+    const [phoneNumber, setPhoneNumber] = useState(user ? user.phone_number : '');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -22,7 +24,7 @@ const UserForm = ({ user, users, onSuccess }) => {
         try {
             if (user) {
                 // Edit user
-                await updateUser(user.id, { name, email, role });
+                await updateUser(user.id, { name, email, role, agency, address, phone_number: phoneNumber });
                 alert('อัปเดตข้อมูลผู้ใช้เรียบร้อย');
             } else {
                 // Add user
@@ -54,7 +56,7 @@ const UserForm = ({ user, users, onSuccess }) => {
                         return;
                     }
                 } else {
-                    await registerWithEmail(email, password, name, { role });
+                    await registerWithEmail(email, password, name, { role, agency, address, phone_number: phoneNumber });
                     alert('เพิ่มผู้ใช้ใหม่เรียบร้อย');
                 }
             }
@@ -77,6 +79,33 @@ const UserForm = ({ user, users, onSuccess }) => {
                     onChange={(e) => setName(e.target.value)}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     required
+                />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">หน่วยงาน</label>
+                <input
+                    type="text"
+                    value={agency}
+                    onChange={(e) => setAgency(e.target.value)}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">ที่อยู่หน่วยงาน</label>
+                <textarea
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    rows={2}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                ></textarea>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">เบอร์โทรศัพท์</label>
+                <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
             </div>
             <div>

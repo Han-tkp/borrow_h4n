@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Functions ---
+    function isSignedIn() {
+      return request.auth.uid != null;
+    }
+
+    function getRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isRole(role) {
+      return isSignedIn() && getRole() == role;
+    }
+
+    // --- Default ---
+    match /{document=**} {
+      allow read: if isSignedIn();
+      allow write: if false; // Deny all writes by default
+    }
+
+    // --- Collections ---
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if request.auth.uid == userId || isRole('admin');
+      allow delete: if isRole('admin'); // Added delete permission for admin
+    }
+
+    match /equipmentTypes/{typeId} {
+      allow read: if isSignedIn();
+      allow write: if isRole('admin'); // 'write' includes delete
+    }
+
+    match /equipment/{equipmentId} {
+      allow read: if isSignedIn();
+      allow create, delete: if isRole('admin');
+      
+      // Admins and Technicians can update equipment.
+      // Approvers have specific status change permissions.
+      allow update: if isRole('admin') || isRole('technician') ||
+                       (isRole('approver') && (
+                          (request.resource.data.status == 'pending_delivery' && resource.data.status == 'pending_borrow_approval') ||
+                          (request.resource.data.status == 'under_maintenance')
+                       ));
+    }
+
+    match /borrows/{borrowId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isRole('admin')
+                       // Approver: Approves request
+                       || (isRole('approver') && request.resource.data.status == 'pending_delivery' && resource.data.status == 'pending_borrow_approval')
+                       // Technician: Confirms delivery
+                       || (isRole('technician') && request.resource.data.status == 'borrowed' && resource.data.status == 'pending_delivery')
+                       // Technician: Processes a return
+                       || (isRole('technician') && request.resource.data.status == 'returned_pending_assessment' && resource.data.status == 'borrowed')
+                       // Technician: Completes the process after post-assessment
+                       || (isRole('technician') && request.resource.data.status == 'completed' && resource.data.status == 'returned_pending_assessment');
+      allow delete: if isRole('admin'); // Added delete permission for admin
+    }
+
+    match /repairs/{repairId} {
+      allow read: if isSignedIn();
+      allow create: if isRole('technician');
+      allow update: if isRole('admin')
+                       // Approver can approve/reject if status is pending
+                       || (isRole('approver') && resource.data.status == 'pending_repair_approval' && (request.resource.data.status == 'repair_approved' || request.resource.data.status == 'repair_rejected'))
+                       // Technician can complete repair from 'approved' or 'in_progress' status
+                       || (isRole('technician') && (resource.data.status == 'repair_approved' || resource.data.status == 'repair_in_progress') && request.resource.data.status == 'repair_completed');
+      allow delete: if isRole('admin'); // Added delete permission for admin
+    }
+
+    match /activityLog/{logId} {
+      allow read, delete: if isRole('admin'); // Allow admin to read and delete
+      allow create: if isSignedIn();
+    }
+
+    match /assessments/{assessmentId} {
+      allow create: if isRole('technician') || isRole('admin');
+      allow delete: if isRole('admin'); // Added delete permission for admin
+    }
+
+    match /standardAssessments/{assessmentId} {
+      allow create: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'technician'];
+      allow read: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'technician', 'approver'];
+      allow delete: if isRole('admin'); // Added delete permission for admin
+    }
+  }
+}

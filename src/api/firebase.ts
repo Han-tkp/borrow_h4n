@@ -4,7 +4,7 @@ import 'firebase/firestore';
 import 'firebase/storage';
 
 // TODO: Add your Firebase project configuration here
-const firebaseConfig = {
+export const firebaseConfig = {
     apiKey: "AIzaSyBNYPJQRfg3zcrhwzg05gUul9-xFLphCkw",
     authDomain: "borrowgmni.firebaseapp.com",
     projectId: "borrowgmni",
@@ -23,19 +23,3 @@ export const auth = firebase.auth();
 export const db = firebase.firestore();
 export const storage = firebase.storage();
 
-export const setupRecaptcha = (containerId: string) => {
-    // Ensure reCAPTCHA is only rendered once
-    if (!(window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier = new firebase.auth.RecaptchaVerifier(containerId, {
-            'size': 'invisible',
-            'callback': (response: any) => {
-                console.log("reCAPTCHA solved, ready to send OTP.");
-            }
-        });
-    }
-};
-
-export const signInWithPhoneNumber = (phoneNumber: string) => {
-    const appVerifier = (window as any).recaptchaVerifier;
-    return auth.signInWithPhoneNumber(phoneNumber, appVerifier);
-};

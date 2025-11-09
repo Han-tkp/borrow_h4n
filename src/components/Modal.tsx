@@ -10,12 +10,12 @@ const Modal = ({ isOpen, title, children, onClose }) => {
         >
             <div 
                 id="modalContent"
-                className="bg-white rounded-2xl p-6 text-slate-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-transform duration-300 scale-100"
+                className="bg-white rounded-2xl p-6 text-[var(--text-color-dark)] w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-transform duration-300 scale-100 shadow-xl"
                 onClick={e => e.stopPropagation()} // Prevent closing when clicking inside modal
             >
                 <div className="flex items-center justify-between">
                     <h3 className="text-xl font-bold">{title}</h3>
-                    <button onClick={onClose} className="text-2xl leading-none text-slate-400 hover:text-slate-800">&times;</button>
+                    <button onClick={onClose} className="text-2xl leading-none text-gray-400 hover:text-gray-800">&times;</button>
                 </div>
                 <div className="mt-4">{children}</div>
             </div>

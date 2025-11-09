@@ -8,11 +8,11 @@ import SummaryCards from './SummaryCards';
 import UploadTypeImageModal from './UploadTypeImageModal';
 
 const EquipmentTab = () => {
-    const { user, showModal, hideModal } = useAppContext();
+    const { user, showModal, hideModal, showToast } = useAppContext();
     const [equipment, setEquipment] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState(user?.role === 'admin' ? 'all' : ''); // Default to 'all' for admins, empty for others
     const [typeFilter, setTypeFilter] = useState('');
     const [sortOrder, setSortOrder] = useState('date_desc');
     const [view, setView] = useState('grid');
@@ -21,7 +21,27 @@ const EquipmentTab = () => {
 
     const fetchEquipment = () => {
         setLoading(true);
-        getEquipmentList({ q: searchQuery, f: statusFilter, t: typeFilter })
+        const filters: { q?: string, f?: string, t?: string, includeDeleted?: boolean } = {
+            q: searchQuery,
+            t: typeFilter
+        };
+
+        if (user?.role === 'admin') {
+            if (statusFilter === 'all') {
+                filters.includeDeleted = true;
+            } else if (statusFilter) {
+                filters.f = statusFilter;
+                if (statusFilter === 'deleted') {
+                    filters.includeDeleted = true;
+                }
+            }
+        } else {
+            if (statusFilter && statusFilter !== 'all') {
+                filters.f = statusFilter;
+            }
+        }
+
+        getEquipmentList(filters)
             .then(list => {
                 const [sortBy, direction] = sortOrder.split('_');
                 const sortedList = [...list].sort((a, b) => {
@@ -131,34 +151,40 @@ const EquipmentTab = () => {
         }
     };
 
+
+
     const renderGridView = () => (
         <div id="dashEquipList" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {equipment.map(e => (
-                <div key={e.id} className={`relative rounded-xl border p-4 bg-white ${selected.has(e.id) ? 'border-blue-500' : 'border-slate-200'} flex items-center gap-4`}>
-                    {user?.role === 'admin' && (
-                        <>
+                <div key={e.id} className={`relative rounded-xl border p-4 bg-white ${selected.has(e.id) ? 'border-[var(--primary-color)]' : 'border-[var(--border-color)]'} flex items-center justify-between gap-6 shadow-sm transition-all`}>
+                    <div className="flex items-center gap-4 max-w-xs">
+                        {user?.role === 'admin' && (
                             <input 
                                 type="checkbox"
-                                className="absolute top-3 left-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                className="self-start w-4 h-4 text-[var(--primary-color)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--primary-color)]"
                                 onChange={() => handleSelectRow(e.id)}
                                 checked={selected.has(e.id)}
                             />
-                            <div className="absolute top-2 right-2 flex gap-2">
-                                <button onClick={() => handleDelete(e.id)} className="text-xs font-medium text-red-600 hover:underline">ลบ</button>
-                            </div>
-                        </>
-                    )}
-                    {e.typeImageUrl && (
-                        <img src={e.typeImageUrl} alt={e.name} className="w-24 h-24 object-cover rounded-md" />
-                    )}
-                    <div>
-                        <div className="font-semibold">{e.name}</div>
-                        <div className="text-sm text-slate-500">S/N: {e.serial}</div>
-                        <div className="text-xs text-slate-400 mt-1">{e.type}</div>
-                        <span className={`mt-2 inline-block text-xs font-medium px-2 py-1 rounded-full ${statusMap[e.status]?.color || 'bg-gray-100'}`}>
-                            {statusMap[e.status]?.text || e.status}
-                        </span>
+                        )}
+                        <div>
+                            <div className="font-semibold text-[var(--text-color-dark)]">{e.name}</div>
+                            <div className="text-sm text-gray-600">S/N: {e.serial}</div>
+                            <div className="text-xs text-gray-500 mt-1">{e.type}</div>
+                            <span className={`mt-2 inline-block text-xs font-medium px-2 py-1 rounded-full ${statusMap[e.status]?.color || 'bg-gray-100 text-gray-800'}`}>
+                                {statusMap[e.status]?.text || e.status}
+                            </span>
+                        </div>
                     </div>
+                    <div className="flex-shrink-0">
+                        {e.typeImageUrl && (
+                            <img src={e.typeImageUrl} alt={e.name} className="w-20 h-20 object-cover rounded-md" />
+                        )}
+                    </div>
+                    {user?.role === 'admin' && selected.has(e.id) && (
+                        <div className="absolute top-2 right-2 flex gap-2">
+                            <button onClick={() => handleDelete(e.id)} className="text-xs font-medium text-[var(--danger-color)] hover:underline">ลบ</button>
+                        </div>
+                    )}
                 </div>
             ))}
         </div>
@@ -166,13 +192,13 @@ const EquipmentTab = () => {
 
     const renderTableView = () => (
         <div id="dashEquipTable" className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-slate-500">
-                <thead className="text-xs text-slate-700 uppercase bg-slate-50">
+            <table className="w-full text-sm text-left text-gray-500">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                     <tr>
                         {user?.role === 'admin' && (
                             <th scope="col" className="p-4">
                                 <input type="checkbox"
-                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                    className="w-4 h-4 text-[var(--primary-color)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--primary-color)]"
                                     onChange={handleSelectAll}
                                     checked={selected.size > 0 && selected.size === equipment.length}
                                 />
@@ -183,33 +209,33 @@ const EquipmentTab = () => {
                         <th scope="col" className="px-4 py-3">Serial No.</th>
                         <th scope="col" className="px-4 py-3">ประเภท</th>
                         <th scope="col" className="px-4 py-3">สถานะ</th>
-                        {user?.role === 'admin' && <th scope="col" className="px-4 py-3">จัดการ</th>}
+                                                {user?.role === 'admin' && <th scope="col" className="px-4 py-3">จัดการ</th>}
                     </tr>
                 </thead>
                 <tbody id="dashEquipTableBody">
                     {equipment.map((e, index) => (
-                        <tr key={e.id} className={`bg-white border-b hover:bg-slate-50 ${selected.has(e.id) ? 'bg-blue-50' : ''}`}>
+                        <tr key={e.id} className={`bg-white border-b hover:bg-gray-50 ${selected.has(e.id) ? 'bg-blue-50' : ''}`}>
                             {user?.role === 'admin' && (
                                 <td className="w-4 p-4">
                                     <input type="checkbox"
-                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                        className="w-4 h-4 text-[var(--primary-color)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--primary-color)]"
                                         onChange={() => handleSelectRow(e.id)}
                                         checked={selected.has(e.id)}
                                     />
                                 </td>
                             )}
-                            <td className="px-4 py-2 font-medium text-slate-900">{index + 1}</td>
-                            <td className="px-4 py-2 font-medium text-slate-900">{e.name}</td>
+                            <td className="px-4 py-2 font-medium text-gray-900">{index + 1}</td>
+                            <td className="px-4 py-2 font-medium text-gray-900">{e.name}</td>
                             <td className="px-4 py-2">{e.serial}</td>
                             <td className="px-4 py-2">{e.type}</td>
                             <td className="px-4 py-2">
-                                <span className={`text-xs font-medium px-2 py-1 rounded-full ${statusMap[e.status]?.color || 'bg-gray-100'}`}>
+                                <span className={`text-xs font-medium px-2 py-1 rounded-full ${statusMap[e.status]?.color || 'bg-gray-100 text-gray-800'}`}>
                                     {statusMap[e.status]?.text || e.status}
                                 </span>
                             </td>
                             {user?.role === 'admin' && (
                                 <td className="px-4 py-2 flex items-center gap-2">
-                                    <button onClick={() => handleDelete(e.id)} className="font-medium text-red-600 hover:underline">ลบ</button>
+                                    <button onClick={() => handleDelete(e.id)} className="font-medium text-[var(--danger-color)] hover:underline">ลบ</button>
                                 </td>
                             )}
                         </tr>
@@ -222,47 +248,52 @@ const EquipmentTab = () => {
     return (
         <div className="tab-content">
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-                <div className="xl:col-span-3 card rounded-2xl p-6 text-slate-900">
+                <div className="xl:col-span-3 bg-white rounded-2xl p-6">
                     <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                        <h3 className="text-lg font-semibold">รายการอุปกรณ์</h3>
+                        <h3 className="text-lg font-semibold text-[var(--text-color-dark)]">รายการอุปกรณ์</h3>
                         <div className="flex flex-wrap items-center gap-2">
                             <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="ค้นหา"
-                                className="px-3 py-2 w-32 rounded-lg border border-slate-200" />
-                            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-slate-200">
-                                <option value="all">ดูทั้งหมด</option>
+                                className="px-3 py-2 w-32 rounded-lg border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]" />
+                            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
+                                {user?.role === 'admin' && <option value="all">ดูทั้งหมด (รวมถูกลบ)</option>}
+                                <option value="">ดูทั้งหมด </option>
                                 <option value="available">ว่าง</option>
                                 <option value="borrowed">ถูกยืม</option>
                                 <option value="under_maintenance">ซ่อมบำรุง</option>
                                 <option value="pending_repair_approval">รออนุมัติซ่อม</option>
-                                {user?.role === 'admin' && <option value="deleted">ถูกลบ (Admin)</option>}
+                                {user?.role === 'admin' && <option value="deleted">ถูกลบ</option>}
                             </select>
-                            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-slate-200 max-w-xs overflow-x-auto">
+                            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--border-color)] max-w-xs overflow-x-auto focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
                                 <option value="">ทุกประเภท</option>
                                 {equipmentTypes.map(type => (
-                                    <option key={type} value={type}>{type}</option>
+                                    <option key={type} value={type} title={type}>
+                                        {type.length > 30 ? `${type.substring(0, 27)}...` : type}
+                                    </option>
                                 ))}
                             </select>
-                            <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} className="px-3 py-2 rounded-lg border border-slate-200">
+                            <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
                                 <option value="date_desc">วันที่นำเข้า: ใหม่สุด &gt; เก่าสุด</option>
                                 <option value="date_asc">วันที่นำเข้า: เก่าสุด &gt; ใหม่สุด</option>
                                 <option value="name_asc">ชื่ออุปกรณ์: A &gt; Z</option>
                                 <option value="name_desc">ชื่ออุปกรณ์: Z &gt; A</option>
                             </select>
                         </div>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                         <div className="flex items-center gap-2 min-h-[40px]">
                             {user?.role === 'admin' && view === 'grid' && equipment.length > 0 && selected.size > 0 && (
-                                <div className="flex items-center p-2 rounded-lg border border-slate-200">
+                                <div className="flex items-center p-2 rounded-lg border border-gray-300">
                                     <input id="select-all-checkbox" type="checkbox"
-                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                        className="w-4 h-4 text-[var(--primary-color)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--primary-color)]"
                                         onChange={handleSelectAll}
                                         checked={selected.size > 0 && selected.size === equipment.length}
                                     />
-                                    <label htmlFor="select-all-checkbox" className="ml-2 text-sm font-medium text-gray-900">เลือกทั้งหมด</label>
+                                    <label htmlFor="select-all-checkbox" className="ml-2 text-sm font-medium text-[var(--text-color)]">เลือกทั้งหมด</label>
                                 </div>
                             )}
                             {user?.role === 'admin' && selected.size > 0 && (
                                 <>
-                                    <select onChange={handleStatusChange} defaultValue="" className="px-3 py-2 rounded-lg border border-slate-200 text-sm">
+                                    <select onChange={handleStatusChange} defaultValue="" className="px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
                                         <option value="" disabled>เปลี่ยนสถานะ...</option>
                                         <option value="available">ว่าง</option>
                                         <option value="borrowed">ถูกยืม</option>
@@ -270,26 +301,26 @@ const EquipmentTab = () => {
                                         <option value="pending_repair_approval">รออนุมัติซ่อม</option>
                                         <option value="deleted">ถูกลบ</option>
                                     </select>
-                                    <button onClick={handleDeleteSelected} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm">
+                                    <button onClick={handleDeleteSelected} className="px-4 py-2 rounded-lg bg-[var(--danger-color)] text-white hover:opacity-90 text-sm">
                                         ลบ {selected.size} รายการที่เลือก
                                     </button>
                                 </>
                             )}
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
-                                <button onClick={() => setView('grid')} className={`p-1.5 text-sm rounded-md ${view === 'grid' ? 'bg-white shadow' : ''}`}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2-0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2-0 01-2-2v-2z" /></svg>
+                            <div className="flex items-center gap-1 bg-gray-200 p-1 rounded-lg">
+                                <button onClick={() => setView('grid')} className={`p-1.5 text-sm rounded-md transition-colors ${view === 'grid' ? 'bg-[var(--primary-color)] text-white' : 'text-gray-500 hover:bg-white'}`}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                                 </button>
-                                <button onClick={() => setView('table')} className={`p-1.5 text-sm rounded-md ${view === 'table' ? 'bg-white shadow' : ''}`}>
+                                <button onClick={() => setView('table')} className={`p-1.5 text-sm rounded-md transition-colors ${view === 'table' ? 'bg-[var(--primary-color)] text-white' : 'text-gray-500 hover:bg-white'}`}>
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" /></svg>
                                 </button>
                             </div>
                             {user?.role === 'admin' && (
                                 <div className="flex gap-2">
-                                    <button onClick={handleUploadTypeImage} className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 text-sm">อัปโหลดรูปภาพประเภท</button>
-                                    <button onClick={handleImport} id="btnImportEquipDash" className="px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 text-sm">นำเข้าจากไฟล์</button>
-                                    <button onClick={handleAddEquipment} id="btnAddEquipDash" className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm">เพิ่มอุปกรณ์</button>
+                                    <button onClick={handleUploadTypeImage} className="px-4 py-2 rounded-lg bg-gray-200 text-[var(--text-color)] hover:bg-gray-300 text-sm">อัปโหลดรูปภาพประเภท</button>
+                                    <button onClick={handleImport} id="btnImportEquipDash" className="px-4 py-2 rounded-lg bg-gray-200 text-[var(--text-color)] hover:bg-gray-300 text-sm">นำเข้าจากไฟล์</button>
+                                    <button onClick={handleAddEquipment} id="btnAddEquipDash" className="px-4 py-2 rounded-lg bg-[var(--primary-color)] text-white hover:opacity-90 text-sm">เพิ่มอุปกรณ์</button>
                                 </div>
                             )}
                         </div>
