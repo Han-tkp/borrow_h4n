@@ -74,14 +74,14 @@ const Dashboard = () => {
             {/* Demo Mode Banner can be a component here */}
 
             <div className="mt-4 overflow-x-auto hidden md:block">
-                <div id="desktopTabs" className="border-b border-[var(--border-color)]">
-                    <div className="inline-flex gap-4 -mb-px">
+                <div id="desktopTabs" className="border-b border-gray-700">
+                    <div className="inline-flex gap-2 -mb-px">
                         {visibleTabs.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 data-tab={tab.id}
-                                className={`py-3 px-4 rounded-t-lg ${activeTab === tab.id ? 'bg-[var(--primary-color)] text-white font-semibold' : 'text-white hover:bg-white/10'}`}>
+                                className={`py-3 px-4 rounded-t-lg transition-colors duration-200 ${activeTab === tab.id ? 'border-b-2 border-indigo-400 text-white font-semibold' : 'text-gray-400 hover:text-white hover:border-gray-300 border-b-2 border-transparent'}`}>
                                 {tab.label}
                             </button>
                         ))}

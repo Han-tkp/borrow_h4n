@@ -116,7 +116,6 @@ const ImportModal = ({ onSuccess, onClose }) => {
                         <p className="text-sm font-mono bg-gray-100 p-2 rounded">name, serial, type, department, price, notes, status</p>
                         <h5 className="font-semibold text-sm">ตัวอย่าง:</h5>
                         <pre className="text-xs bg-gray-100 p-3 rounded">{csvExample}</pre>
-                        <img src={excelExampleImage} alt="Example Placeholder" className="w-full h-auto object-cover rounded-lg border border-gray-200"/>
                         <button onClick={() => handleFileSelectClick('csv')} className="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">เลือกไฟล์ .csv</button>
                     </div>
                 )}
