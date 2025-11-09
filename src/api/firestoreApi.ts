@@ -783,8 +783,9 @@ export const clearStandardAssessments = async () => {
 };
 
 export const deleteAllUsersExceptAdmin = async (adminUid: string) => {
-    console.warn("This function only deletes user data from Firestore, not their authentication accounts. A server-side solution (e.g., Firebase Cloud Function) is required to delete user authentication accounts.");
-    alert("คำเตือน: ฟังก์ชันนี้จะลบข้อมูลผู้ใช้จากฐานข้อมูล Firestore เท่านั้น แต่จะไม่ลบบัญชีการยืนยันตัวตนของผู้ใช้ (Authentication accounts) หากต้องการลบข้อมูลทั้งหมดอย่างสมบูรณ์ โปรดใช้ Firebase Cloud Function");
+    // WARNING: This function only deletes user data from Firestore, not their authentication accounts.
+    // A server-side solution (e.g., Firebase Cloud Function) is required to fully delete user authentication accounts.
+    console.warn("deleteAllUsersExceptAdmin only deletes Firestore user documents, not their Auth accounts. A Cloud Function is needed for complete deletion.");
     
     const userFilter = (doc: firebase.firestore.QueryDocumentSnapshot) => {
         const userData = doc.data();
