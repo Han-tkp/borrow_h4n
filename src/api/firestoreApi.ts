@@ -532,19 +532,18 @@ export const rejectRepair = async (repairId: string) => {
 };
 
 // --- Reports & Other --- //
-export const getReportData = async (filterMonth?: string) => {
-    // --- Monthly Filtered Queries ---
-    let monthlyBorrowsQuery: firebase.firestore.Query = db.collection("borrows");
-    let monthlyRepairsQuery: firebase.firestore.Query = db.collection("repairs");
+export const getReportData = async (startDate?: string, endDate?: string) => {
+    // --- Date-filtered Queries ---
+    let borrowsQuery: firebase.firestore.Query = db.collection("borrows");
+    let repairsQuery: firebase.firestore.Query = db.collection("repairs");
 
-    if (filterMonth) {
-        const year = parseInt(filterMonth.split('-')[0]);
-        const month = parseInt(filterMonth.split('-')[1]) - 1;
-        const startDate = new Date(year, month, 1);
-        const endDate = new Date(year, month + 1, 1);
+    if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999); // Include the entire end day
 
-        monthlyBorrowsQuery = monthlyBorrowsQuery.where('request_date', '>=', startDate).where('request_date', '<', endDate);
-        monthlyRepairsQuery = monthlyRepairsQuery.where('request_date', '>=', startDate).where('request_date', '<', endDate);
+        borrowsQuery = borrowsQuery.where('request_date', '>=', start).where('request_date', '<=', end);
+        repairsQuery = repairsQuery.where('request_date', '>=', start).where('request_date', '<=', end);
     }
 
     // --- Unfiltered Queries for overall stats ---
@@ -554,28 +553,28 @@ export const getReportData = async (filterMonth?: string) => {
     const allRepairsQuery = db.collection("repairs").get();
     
     const [
-        monthlyBorrowSnapshot,
-        monthlyRepairSnapshot,
+        borrowSnapshot,
+        repairSnapshot,
         usersSnapshot,
         equipmentSnapshot,
         allBorrowsSnapshot,
         allRepairsSnapshot
     ] = await Promise.all([
-        monthlyBorrowsQuery.get(),
-        monthlyRepairsQuery.get(),
+        borrowsQuery.get(),
+        repairsQuery.get(),
         allUsersQuery,
         allEquipmentQuery,
         allBorrowsQuery,
         allRepairsQuery
     ]);
 
-    // --- Monthly Stats ---
-    const monthlyBorrows = monthlyBorrowSnapshot.docs.map(doc => doc.data());
-    const monthlyRepairs = monthlyRepairSnapshot.docs.map(doc => doc.data());
-    const totalBorrowsInMonth = monthlyBorrows.length;
-    const totalRepairsInMonth = monthlyRepairs.length;
-    const totalRepairCostInMonth = monthlyRepairs.reduce((sum, r) => sum + (Number(r.cost) || 0), 0);
-    const borrowingByTypeInMonth = monthlyBorrows.flatMap(b => b.equipment_requests || []).reduce((acc: any, req: any) => {
+    // --- Date-range Stats ---
+    const dateRangeBorrows = borrowSnapshot.docs.map(doc => doc.data());
+    const dateRangeRepairs = repairSnapshot.docs.map(doc => doc.data());
+    const totalBorrowsInRange = dateRangeBorrows.length;
+    const totalRepairsInRange = dateRangeRepairs.length;
+    const totalRepairCostInRange = dateRangeRepairs.reduce((sum, r) => sum + (Number(r.cost) || 0), 0);
+    const borrowingByTypeInRange = dateRangeBorrows.flatMap(b => b.equipment_requests || []).reduce((acc: any, req: any) => {
         acc[req.type] = (acc[req.type] || 0) + req.quantity;
         return acc;
     }, {});
@@ -611,11 +610,11 @@ export const getReportData = async (filterMonth?: string) => {
 
 
     return {
-        // Monthly
-        totalBorrows: totalBorrowsInMonth,
-        totalRepairs: totalRepairsInMonth,
-        totalRepairCost: totalRepairCostInMonth,
-        borrowingByType: borrowingByTypeInMonth,
+        // Date Range
+        totalBorrows: totalBorrowsInRange,
+        totalRepairs: totalRepairsInRange,
+        totalRepairCost: totalRepairCostInRange,
+        borrowingByType: borrowingByTypeInRange,
         // Overall
         totalUsers,
         totalEquipment,
