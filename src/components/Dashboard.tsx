@@ -74,14 +74,14 @@ const Dashboard = () => {
             {/* Demo Mode Banner can be a component here */}
 
             <div className="mt-4 overflow-x-auto hidden md:block">
-                <div id="desktopTabs" className="bg-white/50 backdrop-blur-sm p-2 rounded-xl inline-block">
-                    <div className="inline-flex items-center justify-center bg-white/80 p-1 rounded-lg">
+                <div id="desktopTabs" className="flex justify-center">
+                    <div className="bg-white/50 backdrop-blur-sm p-2 rounded-xl inline-flex items-center justify-center bg-white/80">
                         {visibleTabs.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 data-tab={tab.id}
-                                className={`py-2 px-4 rounded-md transition-colors duration-300 text-sm font-medium ${activeTab === tab.id ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-700 hover:bg-gray-200/50 hover:text-gray-900'}`}>
+                                className={`py-2 px-6 rounded-md transition-colors duration-300 text-sm font-medium ${activeTab === tab.id ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-700 hover:bg-gray-200/50 hover:text-gray-900'}`}>
                                 {tab.label}
                             </button>
                         ))}
