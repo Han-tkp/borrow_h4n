@@ -90,41 +90,41 @@ const ReportTab = () => {
 
     return (
         <div className="tab-content">
-            <div className="card rounded-2xl p-6 bg-slate-50 text-slate-900 mb-6">
-                <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="card rounded-2xl p-4 sm:p-6 bg-slate-50 text-slate-900 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <h3 className="text-lg font-semibold">Strategic Dashboard</h3>
                     <div className="flex items-center gap-2">
-                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="px-3 py-2 text-sm rounded-lg border border-slate-200" />
+                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="px-3 py-2 w-full sm:w-auto text-sm rounded-lg border border-slate-200" />
                         <span className="text-slate-500">to</span>
-                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="px-3 py-2 text-sm rounded-lg border border-slate-200" />
+                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="px-3 py-2 w-full sm:w-auto text-sm rounded-lg border border-slate-200" />
                     </div>
                 </div>
 
                 {/* Monthly Summary */}
-                <div className="mt-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 grid-mobile-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="rounded-xl p-4 bg-indigo-100 text-indigo-800"><div className="text-sm">การยืม (ในขอบเขต)</div><div className="text-3xl font-bold mt-1">{reportData.totalBorrows}</div></div>
                     <div className="rounded-xl p-4 bg-amber-100 text-amber-800"><div className="text-sm">การซ่อม (ในขอบเขต)</div><div className="text-3xl font-bold mt-1">{reportData.totalRepairs}</div></div>
                     <div className="rounded-xl p-4 bg-red-100 text-red-800"><div className="text-sm">ค่าซ่อม (ในขอบเขต)</div><div className="text-3xl font-bold mt-1">{reportData.totalRepairCost.toLocaleString()}.-</div></div>
                 </div>
 
                 {/* Overall Summary */}
-                <div className="mt-4 grid sm:grid-cols-2 lg:grid-cols-2 gap-4 grid-mobile-1">
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="rounded-xl p-4 bg-green-100 text-green-800"><div className="text-sm">ผู้ใช้งานทั้งหมด</div><div className="text-3xl font-bold mt-1">{reportData.totalUsers}</div></div>
                     <div className="rounded-xl p-4 bg-sky-100 text-sky-800"><div className="text-sm">อุปกรณ์ทั้งหมด</div><div className="text-3xl font-bold mt-1">{reportData.totalEquipment}</div></div>
                 </div>
 
-                <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-6 grid-mobile-1">
-                    <div className="chart-container lg:col-span-2">
+                <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <div className="chart-container lg:col-span-2 xl:col-span-3">
                         <h5 className="font-semibold mb-2 text-slate-800 text-center">แนวโน้มการยืมและการซ่อม (รายเดือน)</h5>
                         <Line data={trendChartData} />
                     </div>
                     <div className="chart-container">
                          <h5 className="font-semibold mb-2 text-slate-800 text-center">สถานะอุปกรณ์ทั้งหมด</h5>
-                        {Object.keys(reportData.equipmentStatusCounts).length > 0 ? <Doughnut data={equipmentStatusChartData} /> : <p className='text-center text-slate-500'>ไม่มีข้อมูล</p>}
+                        {Object.keys(reportData.equipmentStatusCounts).length > 0 ? <Doughnut data={equipmentStatusChartData} options={{ maintainAspectRatio: false }} /> : <p className='text-center text-slate-500'>ไม่มีข้อมูล</p>}
                     </div>
                     <div className="chart-container">
                          <h5 className="font-semibold mb-2 text-slate-800 text-center">สัดส่วนการยืมตามประเภท (ในขอบเขต)</h5>
-                        {Object.keys(reportData.borrowingByType).length > 0 ? <Pie data={borrowByTypeChartData} /> : <p className='text-center text-slate-500'>ไม่มีข้อมูล</p>}
+                        {Object.keys(reportData.borrowingByType).length > 0 ? <Pie data={borrowByTypeChartData} options={{ maintainAspectRatio: false }} /> : <p className='text-center text-slate-500'>ไม่มีข้อมูล</p>}
                     </div>
                 </div>
             </div>

@@ -247,66 +247,14 @@ const EquipmentTab = () => {
 
     return (
         <div className="tab-content">
+            {/* Summary Cards for Mobile/Tablet */}
+            <div className="block xl:hidden mb-6">
+                <SummaryCards />
+            </div>
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-                <div className="xl:col-span-3 bg-white rounded-2xl p-6">
-                    <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <div className="xl:col-span-3 bg-white rounded-2xl p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                         <h3 className="text-lg font-semibold text-[var(--text-color-dark)]">รายการอุปกรณ์</h3>
-                        <div className="flex flex-wrap items-center gap-2">
-                            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="ค้นหา"
-                                className="px-3 py-2 w-32 rounded-lg border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]" />
-                            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
-                                {user?.role === 'admin' && <option value="all">ดูทั้งหมด (รวมถูกลบ)</option>}
-                                <option value="">ดูทั้งหมด </option>
-                                <option value="available">ว่าง</option>
-                                <option value="borrowed">ถูกยืม</option>
-                                <option value="under_maintenance">ซ่อมบำรุง</option>
-                                <option value="pending_repair_approval">รออนุมัติซ่อม</option>
-                                {user?.role === 'admin' && <option value="deleted">ถูกลบ</option>}
-                            </select>
-                            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--border-color)] max-w-xs overflow-x-auto focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
-                                <option value="">ทุกประเภท</option>
-                                {equipmentTypes.map(type => (
-                                    <option key={type} value={type} title={type}>
-                                        {type.length > 30 ? `${type.substring(0, 27)}...` : type}
-                                    </option>
-                                ))}
-                            </select>
-                            <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
-                                <option value="date_desc">วันที่นำเข้า: ใหม่สุด &gt; เก่าสุด</option>
-                                <option value="date_asc">วันที่นำเข้า: เก่าสุด &gt; ใหม่สุด</option>
-                                <option value="name_asc">ชื่ออุปกรณ์: A &gt; Z</option>
-                                <option value="name_desc">ชื่ออุปกรณ์: Z &gt; A</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                        <div className="flex items-center gap-2 min-h-[40px]">
-                            {user?.role === 'admin' && view === 'grid' && equipment.length > 0 && selected.size > 0 && (
-                                <div className="flex items-center p-2 rounded-lg border border-gray-300">
-                                    <input id="select-all-checkbox" type="checkbox"
-                                        className="w-4 h-4 text-[var(--primary-color)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--primary-color)]"
-                                        onChange={handleSelectAll}
-                                        checked={selected.size > 0 && selected.size === equipment.length}
-                                    />
-                                    <label htmlFor="select-all-checkbox" className="ml-2 text-sm font-medium text-[var(--text-color)]">เลือกทั้งหมด</label>
-                                </div>
-                            )}
-                            {user?.role === 'admin' && selected.size > 0 && (
-                                <>
-                                    <select onChange={handleStatusChange} defaultValue="" className="px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
-                                        <option value="" disabled>เปลี่ยนสถานะ...</option>
-                                        <option value="available">ว่าง</option>
-                                        <option value="borrowed">ถูกยืม</option>
-                                        <option value="under_maintenance">ซ่อมบำรุง</option>
-                                        <option value="pending_repair_approval">รออนุมัติซ่อม</option>
-                                        <option value="deleted">ถูกลบ</option>
-                                    </select>
-                                    <button onClick={handleDeleteSelected} className="px-4 py-2 rounded-lg bg-[var(--danger-color)] text-white hover:opacity-90 text-sm">
-                                        ลบ {selected.size} รายการที่เลือก
-                                    </button>
-                                </>
-                            )}
-                        </div>
                         <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1 bg-gray-200 p-1 rounded-lg">
                                 <button onClick={() => setView('grid')} className={`p-1.5 text-sm rounded-md transition-colors ${view === 'grid' ? 'bg-[var(--primary-color)] text-white' : 'text-gray-500 hover:bg-white'}`}>
@@ -318,13 +266,79 @@ const EquipmentTab = () => {
                             </div>
                             {user?.role === 'admin' && (
                                 <div className="flex gap-2">
-                                    <button onClick={handleUploadTypeImage} className="px-4 py-2 rounded-lg bg-gray-200 text-[var(--text-color)] hover:bg-gray-300 text-sm">อัปโหลดรูปภาพประเภท</button>
-                                    <button onClick={handleImport} id="btnImportEquipDash" className="px-4 py-2 rounded-lg bg-gray-200 text-[var(--text-color)] hover:bg-gray-300 text-sm">นำเข้าจากไฟล์</button>
                                     <button onClick={handleAddEquipment} id="btnAddEquipDash" className="px-4 py-2 rounded-lg bg-[var(--primary-color)] text-white hover:opacity-90 text-sm">เพิ่มอุปกรณ์</button>
                                 </div>
                             )}
                         </div>
                     </div>
+
+                    {/* Filters */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+                        <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="ค้นหา..."
+                            className="px-3 py-2 w-full rounded-lg border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]" />
+                        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
+                            {user?.role === 'admin' && <option value="all">ดูทั้งหมด (รวมถูกลบ)</option>}
+                            <option value="">ดูทั้งหมด</option>
+                            <option value="available">ว่าง</option>
+                            <option value="borrowed">ถูกยืม</option>
+                            <option value="under_maintenance">ซ่อมบำรุง</option>
+                            <option value="pending_repair_approval">รออนุมัติซ่อม</option>
+                            {user?.role === 'admin' && <option value="deleted">ถูกลบ</option>}
+                        </select>
+                        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-[var(--border-color)] max-w-full overflow-x-auto focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
+                            <option value="">ทุกประเภท</option>
+                            {equipmentTypes.map(type => (
+                                <option key={type} value={type} title={type}>
+                                    {type.length > 30 ? `${type.substring(0, 27)}...` : type}
+                                </option>
+                            ))}
+                        </select>
+                        <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
+                            <option value="date_desc">วันที่: ใหม่ &gt; เก่า</option>
+                            <option value="date_asc">วันที่: เก่า &gt; ใหม่</option>
+                            <option value="name_asc">ชื่อ: A &gt; Z</option>
+                            <option value="name_desc">ชื่อ: Z &gt; A</option>
+                        </select>
+                    </div>
+
+                    {/* Admin Actions */}
+                    <div className="flex flex-wrap items-center gap-2 mb-4 min-h-[40px]">
+                        {user?.role === 'admin' && view === 'grid' && equipment.length > 0 && (
+                            <div className="flex items-center p-2 rounded-lg border border-gray-300">
+                                <input id="select-all-checkbox" type="checkbox"
+                                    className="w-4 h-4 text-[var(--primary-color)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--primary-color)]"
+                                    onChange={handleSelectAll}
+                                    checked={selected.size > 0 && selected.size === equipment.length}
+                                />
+                                <label htmlFor="select-all-checkbox" className="ml-2 text-sm font-medium text-[var(--text-color)]">เลือกทั้งหมด</label>
+                            </div>
+                        )}
+                        {user?.role === 'admin' && selected.size > 0 && (
+                            <>
+                                <select onChange={handleStatusChange} defaultValue="" className="px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
+                                    <option value="" disabled>เปลี่ยนสถานะ...</option>
+                                    <option value="available">ว่าง</option>
+                                    <option value="borrowed">ถูกยืม</option>
+                                    <option value="under_maintenance">ซ่อมบำรุง</option>
+                                    <option value="pending_repair_approval">รออนุมัติซ่อม</option>
+                                    <option value="deleted">ถูกลบ</option>
+                                </select>
+                                <button onClick={handleDeleteSelected} className="px-4 py-2 rounded-lg bg-[var(--danger-color)] text-white hover:opacity-90 text-sm">
+                                    ลบ {selected.size} รายการ
+                                </button>
+                            </>
+                        )}
+                    </div>
+                    
+                    {/* Admin Import/Export */}
+                    {user?.role === 'admin' && (
+                        <div className="flex flex-wrap gap-2 mb-4">
+                             <button onClick={handleUploadTypeImage} className="px-4 py-2 rounded-lg bg-gray-200 text-[var(--text-color)] hover:bg-gray-300 text-sm">อัปโหลดรูปประเภท</button>
+                             <button onClick={handleImport} id="btnImportEquipDash" className="px-4 py-2 rounded-lg bg-gray-200 text-[var(--text-color)] hover:bg-gray-300 text-sm">นำเข้าจากไฟล์</button>
+                        </div>
+                    )}
+
+
                     <div className="overflow-y-auto max-h-[60vh] pr-2 -mr-2 mt-4">
                         {loading ? <p>Loading...</p> : (view === 'grid' ? renderGridView() : renderTableView())}
                     </div>

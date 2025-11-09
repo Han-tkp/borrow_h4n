@@ -34,6 +34,7 @@ const allTabs = [
 const Dashboard = () => {
     const { user } = useAppContext(); // Get user from context
     const [activeTab, setActiveTab] = useState('equipmentTab');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // State for mobile dropdown
 
     // Filter tabs based on user role
     const visibleTabs = allTabs.filter(tab => user && tab.roles.includes(user.role));
@@ -69,11 +70,42 @@ const Dashboard = () => {
         return <p>Loading user data...</p>; // Or a loading spinner
     }
 
+    const activeTabLabel = visibleTabs.find(tab => tab.id === activeTab)?.label || 'Menu';
+
     return (
         <section id="dashboard" className="fade-in">
-            {/* Demo Mode Banner can be a component here */}
+            {/* Mobile Menu */}
+            <div className="relative md:hidden">
+                <button
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="w-full bg-white/80 backdrop-blur-sm p-3 rounded-xl text-left text-gray-800 font-semibold flex justify-between items-center shadow"
+                >
+                    {activeTabLabel}
+                    <svg className={`w-5 h-5 transition-transform ${isMobileMenuOpen ? 'transform rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                {isMobileMenuOpen && (
+                    <div className="absolute z-10 mt-2 w-full bg-white rounded-xl shadow-lg border border-gray-100">
+                        <ul className="py-2">
+                            {visibleTabs.map(tab => (
+                                <li key={tab.id}>
+                                    <button
+                                        onClick={() => {
+                                            setActiveTab(tab.id);
+                                            setIsMobileMenuOpen(false);
+                                        }}
+                                        className={`w-full text-left px-4 py-2 text-sm ${activeTab === tab.id ? 'bg-indigo-500 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </div>
 
-            <div className="mt-4 overflow-x-auto hidden md:block">
+            {/* Desktop Tabs */}
+            <div className="mt-4 hidden md:block">
                 <div id="desktopTabs" className="max-w-7xl mx-auto">
                     <div className="bg-white/50 backdrop-blur-sm p-2 rounded-xl flex items-center">
                         {visibleTabs.map(tab => (
