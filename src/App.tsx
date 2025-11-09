@@ -1,7 +1,7 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { auth } from './api/firebase';
-import { getUserProfile, createUserProfile } from './api/firestoreApi';
+import { getUserProfile, createUserProfile, updateUser } from './api/firestoreApi'; // Added updateUser
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Sidebar from './components/Sidebar';
@@ -21,6 +21,7 @@ const App = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalContent, setModalContent] = useState<React.ReactNode>(null);
     const [modalTitle, setModalTitle] = useState('');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false); // New state for sidebar
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -52,6 +53,10 @@ const App = () => {
         setIsModalOpen(false);
         setModalTitle('');
         setModalContent(null);
+    };
+
+    const toggleSidebar = () => {
+        setIsSidebarOpen(!isSidebarOpen);
     };
 
     useEffect(() => {
@@ -115,7 +120,7 @@ const App = () => {
     return (
         <AppContext.Provider value={{ user, handleLogout, showModal, hideModal, showToast }}>
             <div className="min-h-screen transition-all duration-300">
-                <Header />
+                <Header toggleSidebar={toggleSidebar} />
                 <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <Routes>
                         <Route path="/" element={<HomePage />} />
@@ -125,7 +130,7 @@ const App = () => {
                         <Route path="/dashboard" element={user ? <Dashboard userRole={user.role} /> : <LoginPage />} />
                     </Routes>
                 </main>
-                <Sidebar />
+                <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
                 <Modal isOpen={isModalOpen} title={modalTitle} onClose={hideModal}>
                     {modalContent}
                 </Modal>

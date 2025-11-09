@@ -1,14 +1,16 @@
 import React from 'react';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }) => {
     return (
-        <div id="sidebar" className="fixed inset-0 z-40 md:hidden hidden">
-            <div id="sidebarBackdrop" className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300"></div>
+        <div id="sidebar" className={`fixed inset-0 z-40 md:hidden ${isOpen ? '' : 'pointer-events-none'}`}>
+            <div id="sidebarBackdrop"
+                className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+                onClick={onClose}></div>
             <div id="sidebarContent"
-                className="relative z-10 w-64 bg-gradient-to-b from-[var(--primary-color)] to-[var(--primary-dark-color)] text-white h-full p-4 flex flex-col transform -translate-x-full transition-transform duration-300 ease-in-out">
+                className={`relative z-10 w-64 bg-gradient-to-b from-[var(--primary-color)] to-[var(--primary-dark-color)] text-white h-full p-4 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="font-semibold text-lg">เมนู</h3>
-                    <button id="sidebarCloseBtn" className="p-2 text-2xl leading-none">&times;</button>
+                    <button id="sidebarCloseBtn" onClick={onClose} className="p-2 text-2xl leading-none">&times;</button>
                 </div>
                 <nav id="sidebarNav" className="flex flex-col gap-2"></nav>
                 <div className="mt-auto pt-6 border-t border-white/10">

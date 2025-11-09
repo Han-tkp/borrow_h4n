@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../App';
 
-const Header = () => {
+const Header = ({ toggleSidebar }) => { // รับ toggleSidebar เป็น prop
     const { user, handleLogout } = useAppContext();
 
     return (
@@ -30,7 +30,7 @@ const Header = () => {
                             </div>
                         )}
                     </nav>
-                    <button id="hamburgerBtn" className="md:hidden p-2 rounded-lg hover:bg-white/10 text-2xl text-white">
+                    <button id="hamburgerBtn" onClick={toggleSidebar} className="md:hidden p-2 rounded-lg hover:bg-white/10 text-2xl text-white">
                         <span>☰</span>
                     </button>
                 </div>
