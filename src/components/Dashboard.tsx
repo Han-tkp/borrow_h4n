@@ -74,8 +74,8 @@ const Dashboard = () => {
             {/* Demo Mode Banner can be a component here */}
 
             <div className="mt-4 overflow-x-auto hidden md:block">
-                <div id="desktopTabs" className="flex justify-center">
-                    <div className="bg-white/50 backdrop-blur-sm p-2 rounded-xl inline-flex items-center justify-center bg-white/80">
+                <div id="desktopTabs" className="max-w-7xl mx-auto">
+                    <div className="bg-white/50 backdrop-blur-sm p-2 rounded-xl flex items-center">
                         {visibleTabs.map(tab => (
                             <button
                                 key={tab.id}
