@@ -19,5 +19,10 @@ export default defineConfig(({ mode }) => {
           '@': path.resolve(__dirname, '.'),
         }
       }
+      build: {
+        commonjsOptions: {
+          include: [/node_modules/],
+        },
+      },
     };
 });
