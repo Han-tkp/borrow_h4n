@@ -330,9 +330,6 @@ const AdminTab = () => {
                                 </select>
                             </div>
                         )}
-                        <div className="flex items-center gap-2">
-                            <button onClick={handleClearAllData} className="px-4 py-2 rounded-lg bg-red-700 text-white hover:opacity-90 text-sm">ล้างทั้งระบบ (ลบข้อมูลทั้งหมด ยกเว้นบัญชี Admin)</button>
-                        </div>
                     </div>
                     <div className="overflow-y-auto max-h-[70vh]">
                         <table className="w-full text-sm text-left text-gray-500">

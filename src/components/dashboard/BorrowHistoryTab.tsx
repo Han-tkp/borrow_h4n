@@ -123,9 +123,7 @@ const BorrowHistoryTab: React.FC<BorrowHistoryTabProps> = ({ userId }) => {
                         </div>
                         {isAdmin && (
                             <>
-                                <button onClick={handleExport} className="px-4 py-2 rounded-lg bg-[var(--success-color)] text-white hover:opacity-90 text-sm">Export to Excel</button>
-                                <button onClick={handleClearHistory} className="px-4 py-2 rounded-lg bg-[var(--danger-color)] text-white hover:opacity-90 text-sm">Clear History</button>
-                            </>
+                                </>
                         )}
                     </div>
                 </div>
