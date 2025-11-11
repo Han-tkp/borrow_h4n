@@ -17,6 +17,10 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
+          'firebase/app': 'firebase/app',
+          'firebase/auth': 'firebase/auth',
+          'firebase/firestore': 'firebase/firestore',
+          'firebase/storage': 'firebase/storage',
         }
       },
       build: {
