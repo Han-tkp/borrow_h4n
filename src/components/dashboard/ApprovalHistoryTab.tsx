@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getActivityLog } from '../../api/firestoreApi';
-import { useAppContext } from '../../App';
+import { useAppContext } from '../../context/AppContext';
 import LogDetailModal from './LogDetailModal';
 
 interface ApprovalHistoryTabProps {

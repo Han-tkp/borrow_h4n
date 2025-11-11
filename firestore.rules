@@ -24,25 +24,27 @@ service cloud.firestore {
     // --- Collections ---
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn();
+      // Allow user creation if the user is creating their own user document.
+      // This rule allows a non-authenticated user to sign up.
+      allow create: if request.auth.uid == userId || request.auth == null;
       allow update: if request.auth.uid == userId || isRole('admin');
-      allow delete: if isRole('admin'); // Added delete permission for admin
+      allow delete: if isRole('admin');
     }
 
     match /equipmentTypes/{typeId} {
-      allow read: if isSignedIn();
+      allow read;
       allow write: if isRole('admin'); // 'write' includes delete
     }
 
     match /equipment/{equipmentId} {
-      allow read: if isSignedIn();
+      allow read;
       allow create, delete: if isRole('admin');
       
       // Admins and Technicians can update equipment.
       // Approvers have specific status change permissions.
       allow update: if isRole('admin') || isRole('technician') ||
                        (isRole('approver') && (
-                          (request.resource.data.status == 'pending_delivery' && resource.data.status == 'pending_borrow_approval') ||
+                          (request.resource.data.status == 'pending_delivery' && resource.data.status == 'available') || // Approver changes status from available to pending_delivery
                           (request.resource.data.status == 'under_maintenance')
                        ));
     }
@@ -51,14 +53,16 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isRole('admin')
-                       // Approver: Approves request
-                       || (isRole('approver') && request.resource.data.status == 'pending_delivery' && resource.data.status == 'pending_borrow_approval')
+                       // Approver: Approves request and assigns equipment
+                       || (isRole('approver') && request.resource.data.status == 'pending_delivery' && resource.data.status == 'pending_borrow_approval' && request.resource.data.equipment_assigned is list)
                        // Technician: Confirms delivery
                        || (isRole('technician') && request.resource.data.status == 'borrowed' && resource.data.status == 'pending_delivery')
                        // Technician: Processes a return
                        || (isRole('technician') && request.resource.data.status == 'returned_pending_assessment' && resource.data.status == 'borrowed')
                        // Technician: Completes the process after post-assessment
-                       || (isRole('technician') && request.resource.data.status == 'completed' && resource.data.status == 'returned_pending_assessment');
+                       || (isRole('technician') && request.resource.data.status == 'completed' && resource.data.status == 'returned_pending_assessment')
+                       // Technician: Updates assigned equipment (e.g., for replacement)
+                       || (isRole('technician') && (resource.data.status == 'borrowed' || resource.data.status == 'pending_delivery') && request.resource.data.equipment_assigned is list);
       allow delete: if isRole('admin'); // Added delete permission for admin
     }
 
@@ -87,6 +91,11 @@ service cloud.firestore {
       allow create: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'technician'];
       allow read: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'technician', 'approver'];
       allow delete: if isRole('admin'); // Added delete permission for admin
+    }
+
+    match /tasks/{taskId} {
+      allow create: if isRole('admin');
+      allow delete: if isRole('admin'); // Allow admin to delete the task document after processing
     }
   }
 }

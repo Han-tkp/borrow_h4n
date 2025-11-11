@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { registerWithEmail, updateUser } from '../../api/firestoreApi';
+import { createUserByAdmin, updateUser } from '../../api/firestoreApi';
 import { roleMap } from '../../utils/helpers';
-import { useAppContext } from '../../App';
+import { useAppContext } from '../../context/AppContext';
 import ReactivateUserModal from './ReactivateUserModal';
 
 const UserForm = ({ user, users, onSuccess }) => {
@@ -56,7 +56,7 @@ const UserForm = ({ user, users, onSuccess }) => {
                         return;
                     }
                 } else {
-                    await registerWithEmail(email, password, name, { role, agency, address, phone_number: phoneNumber });
+                    await createUserByAdmin(email, password, name, { role, agency, address, phone_number: phoneNumber });
                     alert('เพิ่มผู้ใช้ใหม่เรียบร้อย');
                 }
             }

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { getEquipmentList, submitStandardAssessment, getEquipmentTypes } from '../../api/firestoreApi';
-import { useAppContext } from '../../App';
+import { useAppContext } from '../../context/AppContext';
 import StandardAssessmentModal from './StandardAssessmentModal';
 import { statusMap } from '../../utils/helpers';
 

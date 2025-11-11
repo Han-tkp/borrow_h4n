@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAppContext } from '../../App';
+import { useAppContext } from '../../context/AppContext';
 import { getEquipmentList, createBorrowRequest } from '../../api/firestoreApi';
 
 const BorrowTab = () => {

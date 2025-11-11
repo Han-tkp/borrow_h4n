@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getEquipmentTypes, uploadEquipmentTypeImage } from '../../api/firestoreApi';
 import { db } from '../../api/firebase'; // Import db to fetch current image URL
+import { doc, getDoc, collection } from 'firebase/firestore'; // Import modular Firestore functions
 
 interface UploadTypeImageModalProps {
     onSuccess: () => void;
@@ -31,10 +32,11 @@ const UploadTypeImageModal: React.FC<UploadTypeImageModalProps> = ({ onSuccess, 
     // Fetch current image URL when selectedType changes
     useEffect(() => {
         if (selectedType) {
-            db.collection("equipmentTypes").doc(selectedType).get()
-                .then(doc => {
-                    if (doc.exists) {
-                        setCurrentImageUrl(doc.data()?.imageUrl || null);
+            const docRef = doc(collection(db, "equipmentTypes"), selectedType);
+            getDoc(docRef)
+                .then(docSnapshot => {
+                    if (docSnapshot.exists()) {
+                        setCurrentImageUrl(docSnapshot.data()?.imageUrl || null);
                     } else {
                         setCurrentImageUrl(null);
                     }

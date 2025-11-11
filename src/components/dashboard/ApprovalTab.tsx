@@ -4,7 +4,7 @@ import {
     getBorrowRequests, approveBorrow, rejectBorrow, 
     getRepairRequests, approveRepair, rejectRepair
 } from '../../api/firestoreApi';
-import { useAppContext } from '../../App';
+import { useAppContext } from '../../context/AppContext';
 import BorrowRequestDetailModal from './BorrowRequestDetailModal';
 import RepairRequestDetailModal from './RepairRequestDetailModal';
 

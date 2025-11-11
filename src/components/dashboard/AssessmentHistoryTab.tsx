@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getAssessmentHistory, reauthenticate, clearAssessmentHistory } from '../../api/firestoreApi';
-import { useAppContext } from '../../App';
+import { useAppContext } from '../../context/AppContext';
 import * as XLSX from 'xlsx';
 
 interface AssessmentHistoryTabProps {

@@ -12,13 +12,13 @@ const DeleteConfirmationModal: React.FC<Props> = ({ onConfirm, onCancel }) => {
         if (reason.trim()) {
             onConfirm(reason);
         } else {
-            alert('โปรดระบุเหตุผลในการลบ');
+            alert('โปรดระบุเหตุผลในการระงับ');
         }
     };
 
     return (
         <div>
-            <p className="mb-4">โปรดระบุเหตุผลในการลบผู้ใช้ (สถานะจะเปลี่ยนเป็น deleted):</p>
+            <p className="mb-4">โปรดระบุเหตุผลในการระงับผู้ใช้ (สถานะจะเปลี่ยนเป็น deleted):</p>
             <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
@@ -27,7 +27,7 @@ const DeleteConfirmationModal: React.FC<Props> = ({ onConfirm, onCancel }) => {
             />
             <div className="flex justify-end gap-2 mt-4">
                 <button onClick={onCancel} className="px-4 py-2 rounded-lg bg-slate-200 text-slate-800 hover:bg-slate-300 text-sm">ยกเลิก</button>
-                <button onClick={handleConfirm} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm">ยืนยันการลบ</button>
+                <button onClick={handleConfirm} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm">ยืนยันการระงับ</button>
             </div>
         </div>
     );

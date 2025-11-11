@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getAllUsers, updateUser, deleteUser, recoverUser, getActivityLog, reauthenticate, clearActivityLog, clearAssessmentHistory, clearBorrowHistory, clearRepairHistory, deleteAllUsersExceptAdmin, clearEquipmentData, clearEquipmentTypes, clearStandardAssessments, clearAllStorage } from '../../api/firestoreApi';
+import { getAllUsers, updateUser, deleteUser, recoverUser, getActivityLog, reauthenticate, clearActivityLog, clearAssessmentHistory, clearBorrowHistory, clearRepairHistory, triggerDeleteAllUsersTask, clearEquipmentData, clearEquipmentTypes, clearStandardAssessments, clearAllStorage } from '../../api/firestoreApi';
 import { roleMap } from '../../utils/helpers';
-import { useAppContext } from '../../App';
+import { useAppContext } from '../../context/AppContext';
 import LogDetailModal from './LogDetailModal';
 import UserForm from './UserForm';
 import * as XLSX from 'xlsx';
@@ -55,7 +55,7 @@ const AdminTab = () => {
             };
         
             const handleDeleteUser = (uid: string) => {
-                showModal('ยืนยันการลบผู้ใช้', 
+                showModal('ยืนยันการระงับผู้ใช้', 
                     <DeleteConfirmationModal 
                         onCancel={hideModal} 
                         onConfirm={async (reason) => {
@@ -63,7 +63,7 @@ const AdminTab = () => {
                                 await deleteUser(uid, reason);
                                 fetchData();
                                 hideModal();
-                                alert('ปิดใช้งานผู้ใช้และบันทึกเหตุผลเรียบร้อย');
+                                alert('ระงับผู้ใช้และบันทึกเหตุผลเรียบร้อย');
                             } catch (error) {
                                 console.error("Failed to delete user:", error);
                                 alert('เกิดข้อผิดพลาดในการลบผู้ใช้');
@@ -74,7 +74,7 @@ const AdminTab = () => {
             };
         
             const handleDeleteSelected = () => {
-                showModal('ยืนยันการลบผู้ใช้ที่เลือก', 
+                showModal('ยืนยันการระงับผู้ใช้ที่เลือก', 
                     <DeleteConfirmationModal
                         onCancel={hideModal}
                         onConfirm={async (reason) => {
@@ -83,7 +83,7 @@ const AdminTab = () => {
                                 fetchData();
                                 setSelectedUsers([]);
                                 hideModal();
-                                alert('ปิดใช้งานผู้ใช้ที่เลือกและบันทึกเหตุผลเรียบร้อย');
+                                alert('ระงับผู้ใช้ที่เลือกและบันทึกเหตุผลเรียบร้อย');
                             } catch (error) {
                                 console.error("Failed to delete selected users:", error);
                                 alert('เกิดข้อผิดพลาดในการลบผู้ใช้ที่เลือก');
@@ -183,7 +183,7 @@ const AdminTab = () => {
                             clearEquipmentTypes(),
                             clearStandardAssessments(),
                             clearAllStorage(), // Clear Firebase Storage
-                            deleteAllUsersExceptAdmin(user.uid) // Delete all users except the current admin
+                            triggerDeleteAllUsersTask(user.uid) // Trigger the task via Firestore
                         ]);
                         alert("ล้างข้อมูลทั้งหมดเรียบร้อยแล้ว (ยกเว้นบัญชี Admin)");
                         fetchData(); // Refresh the data
@@ -211,7 +211,7 @@ const AdminTab = () => {
                         </div>
                         <div className="flex items-center gap-2">
                             <button onClick={handleAddUser} className="px-4 py-2 rounded-lg bg-[var(--primary-color)] text-white hover:opacity-90 text-sm">เพิ่มผู้ใช้ใหม่</button>
-                            <button onClick={handleDeleteSelected} disabled={selectedUsers.length === 0} className="px-4 py-2 rounded-lg bg-[var(--danger-color)] text-white hover:opacity-80 text-sm disabled:opacity-50">ปิดใช้งานรายการที่เลือก</button>
+                            <button onClick={handleDeleteSelected} disabled={selectedUsers.length === 0} className="px-4 py-2 rounded-lg bg-[var(--danger-color)] text-white hover:opacity-80 text-sm disabled:opacity-50">ระงับรายการที่เลือก</button>
                         </div>
                     </div>
                     <div className="overflow-y-auto max-h-[60vh] pr-2 -mr-2">
@@ -256,7 +256,7 @@ const AdminTab = () => {
                                            <button onClick={() => handleViewUser(user)} className="text-xs text-blue-600 hover:underline">ดูรายละเอียด</button>
                                            <button onClick={() => handleEditUser(user)} className="text-xs text-[var(--primary-color)] hover:underline ml-2">แก้ไข</button>
                                            {user.status !== 'deleted' ? (
-                                                <button onClick={() => handleDeleteUser(user.id)} className="text-xs text-[var(--danger-color)] hover:underline ml-2">ปิดใช้งาน</button>
+                                                <button onClick={() => handleDeleteUser(user.id)} className="text-xs text-[var(--danger-color)] hover:underline ml-2">ระงับ</button>
                                            ) : (
                                                 <button onClick={() => handleRecoverUser(user.id)} className="text-xs text-[var(--success-color)] hover:underline ml-2">กู้คืน</button>
                                            )}

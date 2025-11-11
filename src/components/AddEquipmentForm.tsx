@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { addEquipment, uploadEquipmentTypeImage } from '../api/firestoreApi';
-import { useAppContext } from '../App';
+import { useAppContext } from '../context/AppContext';
 
 const AddEquipmentForm = ({ onSuccess }) => {
     const { hideModal } = useAppContext();

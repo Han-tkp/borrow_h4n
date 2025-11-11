@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { logAssessmentAndConfirmDelivery, logAssessmentAndChangeEquipment } from '../../api/firestoreApi';
-import { useAppContext } from '../../App';
+import { logAssessmentAndConfirmDelivery, logAssessmentAndChangeEquipment, logAssessmentAndSendForRepair } from '../../api/firestoreApi';
+import { useAppContext } from '../../context/AppContext';
 import ChangeEquipmentModal from './ChangeEquipmentModal';
 
 const CHECKLIST_ITEMS = [
@@ -17,7 +17,7 @@ interface AssessmentModalProps {
     borrowRequest: any;
     equipment: any;
     onClose: () => void;
-    onSuccess: () => void; // Simplified callback
+    onSuccess: (borrowRequestId: string, equipmentId: string) => void; // Updated callback signature
 }
 
 const AssessmentModal: React.FC<AssessmentModalProps> = ({ borrowRequest, equipment, onClose, onSuccess }) => {
@@ -27,6 +27,7 @@ const AssessmentModal: React.FC<AssessmentModalProps> = ({ borrowRequest, equipm
     );
     const [notes, setNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showAbnormalOptions, setShowAbnormalOptions] = useState(false); // New state to manage choice
 
     const handleAssessmentChange = (item: string, value: 'ปกติ' | 'ผิดปกติ') => {
         setAssessments(prev => ({ ...prev, [item]: value }));
@@ -39,10 +40,23 @@ const AssessmentModal: React.FC<AssessmentModalProps> = ({ borrowRequest, equipm
         try {
             await logAssessmentAndChangeEquipment(assessmentData, replacementId);
             showToast('Success', 'ยืนยันการเปลี่ยนเครื่องเรียบร้อยแล้ว');
-            onSuccess(); // This will hide modals and refresh data
+            onSuccess(borrowRequest.id, equipment.id); // Pass IDs to onSuccess
         } catch (error) {
             console.error("Failed to change equipment:", error);
             showToast('Error', 'เกิดข้อผิดพลาดในการเปลี่ยนเครื่อง');
+        }
+        setIsSubmitting(false);
+    };
+
+    const handleSendForRepair = async (assessmentData: any) => {
+        setIsSubmitting(true);
+        try {
+            await logAssessmentAndSendForRepair(assessmentData);
+            showToast('Success', 'ส่งเครื่องซ่อมเรียบร้อยแล้ว');
+            onSuccess(borrowRequest.id, equipment.id);
+        } catch (error) {
+            console.error("Failed to send for repair:", error);
+            showToast('Error', 'เกิดข้อผิดพลาดในการส่งเครื่องซ่อม');
         }
         setIsSubmitting(false);
     };
@@ -69,13 +83,13 @@ const AssessmentModal: React.FC<AssessmentModalProps> = ({ borrowRequest, equipm
         };
 
         if (isAnyAbnormal) {
-            showChangeModal(assessmentData);
+            setShowAbnormalOptions(true); // Show choice for abnormal items
         } else {
             setIsSubmitting(true);
             try {
                 await logAssessmentAndConfirmDelivery(assessmentData);
                 showToast('Success', 'ยืนยันการส่งมอบเรียบร้อยแล้ว');
-                onSuccess(); // This will hide modal and refresh data
+                onSuccess(borrowRequest.id, equipment.id); // Pass IDs to onSuccess
             } catch (error) {
                 console.error("Failed to confirm delivery:", error);
                 showToast('Error', 'เกิดข้อผิดพลาดในการยืนยันการส่งมอบ');
@@ -109,7 +123,14 @@ const AssessmentModal: React.FC<AssessmentModalProps> = ({ borrowRequest, equipm
             <div className="mt-6 flex justify-end gap-3">
                 <button onClick={onClose} disabled={isSubmitting} className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 disabled:opacity-50">ยกเลิก</button>
                 {isAnyAbnormal ? (
-                    <button onClick={handleSubmit} disabled={isSubmitting} className="px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 disabled:opacity-50">พบปัญหา/เปลี่ยนเครื่อง</button>
+                    showAbnormalOptions ? (
+                        <>
+                            <button onClick={() => showChangeModal({ borrowRequestId: borrowRequest.id, equipmentId: equipment.id, assessments, notes })} disabled={isSubmitting} className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50">เปลี่ยนเครื่องทดแทน</button>
+                            <button onClick={() => handleSendForRepair({ borrowRequestId: borrowRequest.id, equipmentId: equipment.id, assessments, notes })} disabled={isSubmitting} className="px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 disabled:opacity-50">ส่งซ่อม (ไม่เปลี่ยนเครื่อง)</button>
+                        </>
+                    ) : (
+                        <button onClick={() => setShowAbnormalOptions(true)} disabled={isSubmitting} className="px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 disabled:opacity-50">พบปัญหา</button>
+                    )
                 ) : (
                     <button onClick={handleSubmit} disabled={isSubmitting} className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">ยืนยันส่งมอบ (เครื่องปกติ)</button>
                 )}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getUserProfile, updateUser } from '../../api/firestoreApi';
-import { useAppContext } from '../../App';
+import { useAppContext } from '../../context/AppContext';
 
 const ProfileTab = () => {
     const { user, showToast } = useAppContext();

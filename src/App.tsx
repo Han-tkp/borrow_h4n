@@ -1,7 +1,7 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { auth } from './api/firebase';
-import { getUserProfile, createUserProfile } from './api/firestoreApi';
+import { getUserProfile, updateUser } from './api/firestoreApi'; // Added updateUser
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Sidebar from './components/Sidebar';
@@ -12,8 +12,8 @@ import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
 import Dashboard from './components/Dashboard';
 import EquipmentShowcase from './components/EquipmentShowcase';
-
-const AppContext = createContext<any>(null);
+import { AppContext } from './context/AppContext';
+import { allTabs } from './data/tabs';
 
 const App = () => {
     const [user, setUser] = useState<any>(null);
@@ -21,8 +21,13 @@ const App = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalContent, setModalContent] = useState<React.ReactNode>(null);
     const [modalTitle, setModalTitle] = useState('');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('equipmentTab'); // Tab state moved to App.tsx
     const navigate = useNavigate();
     const location = useLocation();
+
+    // Filter tabs based on user role
+    const visibleTabs = user ? allTabs.filter(tab => tab.roles.includes(user.role)) : [];
 
     const showToast = (type: 'Success' | 'Error', message: string) => {
         const toast = document.getElementById('toast');
@@ -54,6 +59,18 @@ const App = () => {
         setModalContent(null);
     };
 
+    const toggleSidebar = () => {
+        setIsSidebarOpen(!isSidebarOpen);
+    };
+
+    useEffect(() => {
+        // Reset to default tab if the current one is no longer visible
+        if (user && !visibleTabs.some(tab => tab.id === activeTab)) {
+            setActiveTab(visibleTabs[0]?.id || 'equipmentTab');
+        }
+    }, [user, visibleTabs]);
+
+
     useEffect(() => {
         console.log('Auth listener effect is running.');
                 const unsubscribe = auth.onAuthStateChanged(async firebaseUser => {
@@ -77,7 +94,9 @@ const App = () => {
                                 const isMainAdmin = firebaseUser.email === 'admin@nrt.web.app';
                                 userProfile.isMainAccount = isMainAdmin; // Add this property
                                 setUser({ uid: firebaseUser.uid, ...userProfile });
-                                navigate('/dashboard');
+                                if (location.pathname === '/' || location.pathname === '/login' || location.pathname === '/register') {
+                                    navigate('/dashboard');
+                                }
                             } else if (userProfile.status === 'pending_approval') {
                                 alert('บัญชีของคุณกำลังรอการอนุมัติ');
                                 auth.signOut();
@@ -115,17 +134,23 @@ const App = () => {
     return (
         <AppContext.Provider value={{ user, handleLogout, showModal, hideModal, showToast }}>
             <div className="min-h-screen transition-all duration-300">
-                <Header />
+                <Header toggleSidebar={toggleSidebar} />
                 <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <Routes>
                         <Route path="/" element={<HomePage />} />
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/register" element={<RegisterPage />} />
                         <Route path="/equipment" element={<EquipmentShowcase />} />
-                        <Route path="/dashboard" element={user ? <Dashboard userRole={user.role} /> : <LoginPage />} />
+                        <Route path="/dashboard" element={user ? <Dashboard activeTab={activeTab} setActiveTab={setActiveTab} visibleTabs={visibleTabs} /> : <LoginPage />} />
                     </Routes>
                 </main>
-                <Sidebar />
+                <Sidebar 
+                    isOpen={isSidebarOpen} 
+                    onClose={toggleSidebar} 
+                    visibleTabs={visibleTabs}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                />
                 <Modal isOpen={isModalOpen} title={modalTitle} onClose={hideModal}>
                     {modalContent}
                 </Modal>
@@ -136,5 +161,4 @@ const App = () => {
     );
 };
 
-export const useAppContext = () => useContext(AppContext);
 export default App;

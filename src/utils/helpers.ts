@@ -18,6 +18,7 @@ export const statusMap: { [key: string]: { text: string; color: string } } = {
     borrowed: { text: 'ถูกยืม', color: 'bg-blue-100 text-blue-800' },
     under_maintenance: { text: 'ซ่อมบำรุง', color: 'bg-yellow-100 text-yellow-800' },
     pending_repair_approval: { text: 'รออนุมัติซ่อม', color: 'bg-orange-100 text-orange-800' },
+    pending_delivery: { text: 'รอส่งมอบ', color: 'bg-cyan-100 text-cyan-800' }, // Added this line
     deleted: { text: 'ถูกลบ', color: 'bg-gray-200 text-gray-600' }
 };
 
@@ -26,7 +27,7 @@ export const roleMap: { [key: string]: string } = { admin: 'ผู้ดูแ�
 export const getBorrowStatusTextAndColor = (status: string): { text: string; color: string } => {
     switch (status) {
         case 'pending_borrow_approval': return { text: 'รออนุมัติ', color: 'bg-yellow-100 text-yellow-800' };
-        case 'pending_delivery': return { text: 'อนุมัติแล้ว', color: 'bg-cyan-100 text-cyan-800' };
+        case 'pending_delivery': return { text: 'รอส่งมอบ', color: 'bg-cyan-100 text-cyan-800' };
         case 'borrowed': return { text: 'ยืมอยู่', color: 'bg-blue-100 text-blue-800' };
         case 'rejected': return { text: 'ไม่อนุมัติ', color: 'bg-red-100 text-red-800' };
         case 'cancelled': return { text: 'ยกเลิก', color: 'bg-gray-100 text-gray-800' };
