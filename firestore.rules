@@ -60,9 +60,7 @@ service cloud.firestore {
                        // Technician: Processes a return
                        || (isRole('technician') && request.resource.data.status == 'returned_pending_assessment' && resource.data.status == 'borrowed')
                        // Technician: Completes the process after post-assessment
-                       || (isRole('technician') && request.resource.data.status == 'completed' && resource.data.status == 'returned_pending_assessment')
-                       // Technician: Updates assigned equipment (e.g., for replacement)
-                       || (isRole('technician') && (resource.data.status == 'borrowed' || resource.data.status == 'pending_delivery') && request.resource.data.equipment_assigned is list);
+                       || (isRole('technician') && request.resource.data.status == 'completed' && resource.data.status == 'returned_pending_assessment');
       allow delete: if isRole('admin'); // Added delete permission for admin
     }
 
